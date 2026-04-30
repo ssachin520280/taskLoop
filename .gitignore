@@ -1,0 +1,36 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# builds
+.next/
+out/
+dist/
+build/
+coverage/
+cache/
+*.tsbuildinfo
+
+# foundry
+packages/contracts/cache/
+packages/contracts/out/
+packages/contracts/broadcast/
+packages/contracts/lib/
+
+# env
+.env
+.env.local
+.env.*.local
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# editor and os
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json

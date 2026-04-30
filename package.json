@@ -1,0 +1,20 @@
+{
+  "name": "taskloop",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "dev": "pnpm --parallel --filter @taskloop/web --filter @taskloop/agent dev",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "format": "prettier --write .",
+    "typecheck": "pnpm -r typecheck",
+    "contracts:build": "pnpm --filter @taskloop/contracts build",
+    "contracts:test": "pnpm --filter @taskloop/contracts test"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3",
+    "typescript": "^5.7.2"
+  }
+}
