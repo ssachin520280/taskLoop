@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { Providers } from "@/app/providers";
+import { TopNavbar } from "@/components/top-navbar";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "TaskLoop",
-  description: "Open agent task loops for ETHGlobal"
+  description: "Escrow rails for open agent work"
 };
 
 export default function RootLayout({
@@ -14,7 +16,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <Providers>
+          <TopNavbar />
+          {children}
+        </Providers>
+      </body>
     </html>
   );
 }
