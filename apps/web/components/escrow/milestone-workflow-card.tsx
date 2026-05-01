@@ -147,6 +147,19 @@ function ReviewResult({ result }: { result: MilestoneReviewResult }) {
         ))}
       </div>
       <p className="mt-3 break-all text-xs font-semibold text-emerald-900">0G root: {result.rootHash}</p>
+      <div className="mt-3 rounded-xl bg-white/70 p-3">
+        <p className="text-xs font-black uppercase tracking-[0.14em] text-emerald-900">Release execution</p>
+        <p className="mt-1 text-xs leading-5 text-emerald-800">{result.execution.reason}</p>
+        <p className="mt-2 break-all text-xs font-semibold text-emerald-900">
+          Execution log root: {result.execution.rootHash}
+        </p>
+        {result.execution.execution ? (
+          <p className="mt-1 text-xs text-emerald-800">
+            {result.execution.execution.provider} - {result.execution.execution.status}
+            {result.execution.execution.txHash ? ` - ${result.execution.execution.txHash}` : ""}
+          </p>
+        ) : null}
+      </div>
     </div>
   );
 }

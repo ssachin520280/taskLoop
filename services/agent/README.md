@@ -110,3 +110,55 @@ Expected workflow:
 `KEEPERHUB_EXPLORER_BASE_URL` is optional. Leave it blank to use built-in explorer defaults for supported chains, or set it when KeeperHub returns transactions for a custom chain.
 
 The adapter intentionally does not depend on a fake SDK. Swap the HTTP request body or provider implementation once the real KeeperHub integration contract is available.
+
+## Review-to-Execution Orchestration
+
+`src/review-execution` connects the milestone review engine to the KeeperHub execution adapter.
+
+```ts
+import { reviewAndExecuteMilestoneRelease } from "./src/review-execution";
+
+const result = await reviewAndExecuteMilestoneRelease({
+  escrow: {
+    escrowId: "0x1234567890123456789012345678901234567890",
+    title: "Landing page refresh"
+  },
+  milestone: {
+    milestoneId: "m2",
+    title: "Responsive implementation",
+    amountEth: "0.32"
+  },
+  evidenceUri: "ipfs://...",
+  freelancerNotes: "Preview, screenshots, and commit hash are included.",
+  release: {
+    chainId: 11155111,
+    escrowAddress: "0x1234567890123456789012345678901234567890",
+    milestoneId: "m2",
+    amount: "320000000000000000"
+  }
+});
+
+console.log(result.review.verdict);
+console.log(result.execution.status);
+```
+
+The service flow is:
+
+1. Generate and persist the milestone review.
+2. Check `verdict === "approve"` and `confidence >= TASKLOOP_RELEASE_CONFIDENCE_THRESHOLD`.
+3. If release details are supplied, call `executeMilestoneRelease` through the execution provider.
+4. Persist an execution log to 0G Storage whether execution is triggered or skipped.
+5. Return the review, review root hash, execution decision, and execution log root hash.
+
+Optional threshold:
+
+```bash
+TASKLOOP_REVIEW_API_KEY=replace_me_for_release_execution
+TASKLOOP_RELEASE_CONFIDENCE_THRESHOLD=0.85
+```
+
+When release details are omitted, the response still includes a skipped execution log. This keeps local demos safe while allowing real contract escrows to trigger KeeperHub-backed payout execution.
+
+The web API route requires `TASKLOOP_REVIEW_API_KEY` before it will accept release execution details. Until a real session or wallet-signature auth layer is added, this prevents an unauthenticated request from triggering KeeperHub execution.
+
+The browser UI currently requests review only and receives a skipped execution log. Trusted server-to-server callers can include the release payload plus the API key header to trigger execution through KeeperHub.

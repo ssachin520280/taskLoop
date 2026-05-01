@@ -182,6 +182,7 @@ export function EscrowDetailView({ escrowId }: { escrowId: string }) {
           title: milestone.title,
           description: milestone.agentNote,
           amountEth: formatEth(milestone.amountWei),
+          amountWei: milestone.amountWei.toString(),
           dueDate: milestone.dueDate
         },
         evidenceUri: latestEvidence.uri ?? latestEvidence.label,

@@ -11,6 +11,10 @@
     "./execution": {
       "types": "./src/execution/index.ts",
       "default": "./src/execution/index.ts"
+    },
+    "./review-execution": {
+      "types": "./src/review-execution/index.ts",
+      "default": "./src/review-execution/index.ts"
     }
   },
   "scripts": {

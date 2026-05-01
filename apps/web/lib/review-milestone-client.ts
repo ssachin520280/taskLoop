@@ -2,6 +2,8 @@ export type ReviewVerdict = "approve" | "needs_review" | "reject";
 
 export type RecommendedAction = "release" | "request_more_info" | "dispute_review";
 
+export type ReleaseExecutionStatus = "mocked" | "queued" | "submitted" | "confirmed" | "failed";
+
 export type MilestoneReviewRequest = {
   escrow: {
     escrowId: string;
@@ -15,10 +17,18 @@ export type MilestoneReviewRequest = {
     title: string;
     description?: string;
     amountEth?: string;
+    amountWei?: string;
     dueDate?: string;
   };
   evidenceUri: string;
   freelancerNotes?: string;
+  release?: {
+    chainId: number;
+    escrowAddress: `0x${string}`;
+    milestoneId: string;
+    amount: string;
+    reason?: string;
+  };
 };
 
 export type MilestoneReviewResult = {
@@ -32,6 +42,20 @@ export type MilestoneReviewResult = {
   };
   rootHash: string;
   txHash?: string;
+  execution: {
+    status: "executed" | "skipped";
+    threshold: number;
+    reason: string;
+    execution?: {
+      status: ReleaseExecutionStatus;
+      txHash?: `0x${string}`;
+      provider: string;
+      explorerUrl?: string;
+      rawResponse: unknown;
+    };
+    rootHash: string;
+    txHash?: string;
+  };
 };
 
 export async function requestMilestoneReview(input: MilestoneReviewRequest): Promise<MilestoneReviewResult> {

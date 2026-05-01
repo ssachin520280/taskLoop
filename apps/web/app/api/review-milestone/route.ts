@@ -1,5 +1,6 @@
-import { reviewMilestoneEvidence } from "@taskloop/agent/review";
+import { reviewAndExecuteMilestoneRelease } from "@taskloop/agent/review-execution";
 import { NextResponse, type NextRequest } from "next/server";
+import { isAddress } from "viem";
 import { z } from "zod";
 
 export const runtime = "nodejs";
@@ -18,10 +19,48 @@ const reviewMilestoneRequestSchema = z.object({
     title: z.string().min(1),
     description: z.string().optional(),
     amountEth: z.string().optional(),
+    amountWei: z.string().optional(),
     dueDate: z.string().optional()
   }),
   evidenceUri: z.string().trim().min(1).max(1000),
-  freelancerNotes: z.string().trim().max(2000).optional()
+  freelancerNotes: z.string().trim().max(2000).optional(),
+  release: z
+    .object({
+      chainId: z.number().int().positive(),
+      escrowAddress: z.custom<`0x${string}`>((value) => typeof value === "string" && isAddress(value)),
+      milestoneId: z.string().min(1),
+      amount: z.string().trim().min(1),
+      reason: z.string().trim().max(1000).optional()
+    })
+    .optional()
+}).superRefine((value, context) => {
+  if (!value.release) {
+    return;
+  }
+
+  if (value.release.milestoneId !== value.milestone.milestoneId) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["release", "milestoneId"],
+      message: "Release milestone must match the reviewed milestone"
+    });
+  }
+
+  if (isAddress(value.escrow.escrowId) && value.release.escrowAddress.toLowerCase() !== value.escrow.escrowId.toLowerCase()) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["release", "escrowAddress"],
+      message: "Release escrow address must match the reviewed escrow"
+    });
+  }
+
+  if (value.milestone.amountWei && value.release.amount !== value.milestone.amountWei) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["release", "amount"],
+      message: "Release amount must match the reviewed milestone amount"
+    });
+  }
 });
 
 class UnauthorizedError extends Error {
@@ -33,11 +72,10 @@ class UnauthorizedError extends Error {
 
 export async function POST(request: NextRequest) {
   try {
-    assertAuthorized(request);
-
     const body = await request.json();
     const input = reviewMilestoneRequestSchema.parse(body);
-    const result = await reviewMilestoneEvidence(input);
+    assertAuthorized(request, Boolean(input.release));
+    const result = await reviewAndExecuteMilestoneRelease(input);
 
     return NextResponse.json(result);
   } catch (error) {
@@ -60,17 +98,21 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Review orchestration failed"
+        error: "Review orchestration failed"
       },
       { status: 500 }
     );
   }
 }
 
-function assertAuthorized(request: NextRequest): void {
+function assertAuthorized(request: NextRequest, requiresReleaseExecution: boolean): void {
   const expectedKey = process.env.TASKLOOP_REVIEW_API_KEY?.trim();
 
   if (!expectedKey) {
+    if (requiresReleaseExecution) {
+      throw new UnauthorizedError();
+    }
+
     return;
   }
 
