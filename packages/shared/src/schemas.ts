@@ -44,7 +44,7 @@ export const ensNameSchema = z
   .string()
   .trim()
   .max(120)
-  .refine((value) => value.length === 0 || /^[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+$/.test(value), "Use a valid ENS name");
+  .refine((value) => value.length === 0 || /^\S+\.\S+$/.test(value), "Use a valid ENS name");
 
 export const createEscrowFormSchema = z
   .object({

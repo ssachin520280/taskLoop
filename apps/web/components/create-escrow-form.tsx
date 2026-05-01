@@ -8,12 +8,15 @@ import {
   type CreateEscrowFormInput
 } from "@taskloop/shared";
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { parseEther } from "viem";
 import { Button, buttonClassName } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useCreateEscrow } from "@/hooks/use-create-escrow";
+import { useEnsAddress } from "@/hooks/use-ens-address";
+import { useEnsName } from "@/hooks/use-ens-name";
+import { isPotentialEnsName } from "@/lib/ens";
 
 type FormStep = "edit" | "review" | "success";
 
@@ -52,8 +55,24 @@ export function CreateEscrowForm(): ReactNode {
   const { submitCreateEscrow, isSubmitting, result, error, resetCreateEscrow } = useCreateEscrow();
 
   const values = form.watch();
+  const ensNameInput = form.watch("ensName");
+  const freelancerInput = form.watch("freelancer");
+  const ensAddress = useEnsAddress(ensNameInput);
+  const freelancerEnsName = useEnsName(freelancerInput);
   const totalAmountWei = getTotalAmount(values.milestones);
   const errors = form.formState.errors;
+
+  useEffect(() => {
+    if (ensAddress.address && form.getValues("freelancer").toLowerCase() !== ensAddress.address.toLowerCase()) {
+      form.setValue("freelancer", ensAddress.address, { shouldDirty: true, shouldValidate: true });
+    }
+  }, [ensAddress.address, form]);
+
+  useEffect(() => {
+    if (!ensNameInput && freelancerEnsName.ensName) {
+      form.setValue("ensName", freelancerEnsName.ensName, { shouldDirty: false, shouldValidate: true });
+    }
+  }, [ensNameInput, form, freelancerEnsName.ensName]);
 
   async function handleReview(): Promise<void> {
     const isValid = await form.trigger();
@@ -136,6 +155,13 @@ export function CreateEscrowForm(): ReactNode {
                 </Field>
                 <Field label="Optional ENS name" error={errors.ensName?.message}>
                   <input className="field-input" placeholder="builder.eth" {...form.register("ensName")} />
+                  <EnsResolutionHint
+                    name={ensNameInput}
+                    address={ensAddress.address}
+                    isLoading={ensAddress.isLoading}
+                    isError={ensAddress.isError}
+                    hasNormalizedName={Boolean(ensAddress.normalizedName)}
+                  />
                 </Field>
               </div>
 
@@ -191,7 +217,14 @@ export function CreateEscrowForm(): ReactNode {
             </>
           ) : (
             <div className="grid gap-4">
-              <ReviewRow label="Freelancer" value={values.ensName ? `${values.ensName} (${formatAddress(values.freelancer)})` : formatAddress(values.freelancer)} />
+              <ReviewRow
+                label="Freelancer"
+                value={
+                  values.ensName
+                    ? `${values.ensName} (${formatAddress(values.freelancer)})`
+                    : freelancerEnsName.displayName
+                }
+              />
               <ReviewRow label="Project" value={values.title} />
               <ReviewRow label="Description" value={values.description} />
               <div className="rounded-2xl border border-[var(--border)] bg-[#fff7df] p-4">
@@ -241,6 +274,42 @@ export function CreateEscrowForm(): ReactNode {
       </CardContent>
     </Card>
   );
+}
+
+function EnsResolutionHint({
+  name,
+  address,
+  isLoading,
+  isError,
+  hasNormalizedName
+}: {
+  name?: string;
+  address?: `0x${string}`;
+  isLoading: boolean;
+  isError: boolean;
+  hasNormalizedName: boolean;
+}): ReactNode {
+  if (!isPotentialEnsName(name)) {
+    return null;
+  }
+
+  if (!hasNormalizedName) {
+    return <span className="text-xs font-semibold text-red-700">ENS name could not be normalized.</span>;
+  }
+
+  if (isLoading) {
+    return <span className="text-xs text-[var(--muted)]">Resolving ENS on mainnet...</span>;
+  }
+
+  if (address) {
+    return <span className="text-xs text-emerald-700">Resolved to {formatAddress(address)}</span>;
+  }
+
+  if (isError) {
+    return <span className="text-xs text-[var(--muted)]">ENS lookup unavailable. You can still paste a wallet.</span>;
+  }
+
+  return <span className="text-xs text-[var(--muted)]">No address found for this ENS name.</span>;
 }
 
 function Field({

@@ -2,10 +2,11 @@
 
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { Button } from "@/components/ui/button";
-import { truncateAddress } from "@/lib/utils";
+import { useEnsName } from "@/hooks/use-ens-name";
 
 export function WalletConnect() {
   const { address, isConnected } = useAccount();
+  const { displayName, isLoading } = useEnsName(address);
   const { connect, connectors, isPending } = useConnect();
   const { disconnect } = useDisconnect();
   const connector = connectors[0];
@@ -21,7 +22,7 @@ export function WalletConnect() {
   if (isConnected) {
     return (
       <Button variant="secondary" onClick={() => disconnect()} title={address}>
-        {truncateAddress(address)}
+        {isLoading ? "Resolving..." : displayName}
       </Button>
     );
   }
