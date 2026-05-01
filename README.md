@@ -41,3 +41,7 @@ services/
 ## Hackathon Notes
 
 This scaffold is intentionally small. Add only what helps validate the loop: task creation, agent evaluation, execution, and onchain settlement.
+
+## 0G Storage
+
+`services/agent` includes a small 0G Storage module for persisting milestone evidence summaries, agent review logs, and decision payloads. Configure `ZG_STORAGE_RPC_URL`, `ZG_STORAGE_INDEXER_URL`, and `ZG_STORAGE_PRIVATE_KEY`, then use `uploadJson`, `uploadText`, and `getFileMetadata` from `services/agent/src/storage/zero-g.ts`.
