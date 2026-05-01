@@ -7,6 +7,10 @@
     "./review": {
       "types": "./src/review/index.ts",
       "default": "./src/review/index.ts"
+    },
+    "./execution": {
+      "types": "./src/execution/index.ts",
+      "default": "./src/execution/index.ts"
     }
   },
   "scripts": {

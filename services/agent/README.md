@@ -71,3 +71,42 @@ Output shape:
 ```
 
 The engine starts with deterministic rules and accepts an optional `AgentReviewProvider` so any LLM or agent runtime can refine the draft without coupling TaskLoop to one vendor. The final review payload is persisted to 0G Storage with `uploadJson`.
+
+## KeeperHub Execution Adapter
+
+`src/execution` abstracts reliable onchain execution for milestone payouts.
+
+```ts
+import { executeMilestoneRelease } from "./src/execution";
+
+const result = await executeMilestoneRelease({
+  chainId: 11155111,
+  escrowAddress: "0x1234567890123456789012345678901234567890",
+  milestoneId: "m2",
+  amount: "320000000000000000",
+  reason: "Agent review recommended release."
+});
+
+console.log(result.status);
+console.log(result.txHash);
+```
+
+Optional KeeperHub environment variables:
+
+```bash
+KEEPERHUB_API_URL=https://keeperhub.example/api/execute
+KEEPERHUB_API_KEY=your_keeperhub_api_key
+KEEPERHUB_WORKFLOW_ID=taskloop-release-milestone
+KEEPERHUB_EXPLORER_BASE_URL=
+```
+
+Expected workflow:
+
+1. Build or load the milestone review decision.
+2. Call `executeMilestoneRelease({ chainId, escrowAddress, milestoneId, amount, reason })`, where `amount` is a contract-ready decimal string such as wei.
+3. If `KEEPERHUB_API_URL` and `KEEPERHUB_API_KEY` are configured, the adapter sends a generic HTTP request ready for KeeperHub or MCP-backed execution.
+4. If KeeperHub config is missing, the adapter returns a local mock execution result so the demo flow still works without credentials.
+
+`KEEPERHUB_EXPLORER_BASE_URL` is optional. Leave it blank to use built-in explorer defaults for supported chains, or set it when KeeperHub returns transactions for a custom chain.
+
+The adapter intentionally does not depend on a fake SDK. Swap the HTTP request body or provider implementation once the real KeeperHub integration contract is available.
