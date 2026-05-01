@@ -18,7 +18,8 @@ import { buttonClassName } from "@/components/ui/button";
 import { EmptyState, LoadingState } from "@/components/ui/state";
 import { useEscrowContract } from "@/hooks/use-escrow-contract";
 import type { Escrow, EvidenceItem, FundingStatus, Milestone } from "@/lib/mock-data";
-import { getEscrow } from "@/lib/mock-data";
+import { formatEth, getEscrow } from "@/lib/mock-data";
+import { requestMilestoneReview, type MilestoneReviewResult } from "@/lib/review-milestone-client";
 
 export function EscrowDetailView({ escrowId }: { escrowId: string }) {
   const isContractEscrow = isAddress(escrowId);
@@ -26,6 +27,8 @@ export function EscrowDetailView({ escrowId }: { escrowId: string }) {
   const [milestones, setMilestones] = useState<Milestone[]>(() => initialEscrow?.milestones ?? []);
   const [fundingStatus, setFundingStatus] = useState<FundingStatus>(initialEscrow?.fundingStatus ?? "unfunded");
   const [dispute, setDispute] = useState<Escrow["dispute"]>(initialEscrow?.dispute);
+  const [reviewResults, setReviewResults] = useState<Record<string, MilestoneReviewResult>>({});
+  const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string>();
   const { toast } = useToast();
   const contract = useEscrowContract(escrowId, initialEscrow);
 
@@ -154,6 +157,50 @@ export function EscrowDetailView({ escrowId }: { escrowId: string }) {
     toast({ title: "Escrow funded", description: "Demo state updated locally.", tone: "success" });
   }
 
+  async function handleRequestReview(milestoneId: string, notes?: string) {
+    const milestone = visibleMilestones.find((item) => item.id === milestoneId);
+    const latestEvidence = milestone?.evidence.at(-1);
+
+    if (!milestone || !latestEvidence) {
+      toast({ title: "Evidence required", description: "Submit evidence before requesting agent review.", tone: "error" });
+      return;
+    }
+
+    setReviewingMilestoneId(milestoneId);
+
+    try {
+      const result = await requestMilestoneReview({
+        escrow: {
+          escrowId: escrow.id,
+          title: escrow.title,
+          description: escrow.description,
+          client: escrow.client,
+          freelancer: escrow.freelancer
+        },
+        milestone: {
+          milestoneId: milestone.id,
+          title: milestone.title,
+          description: milestone.agentNote,
+          amountEth: formatEth(milestone.amountWei),
+          dueDate: milestone.dueDate
+        },
+        evidenceUri: latestEvidence.uri ?? latestEvidence.label,
+        freelancerNotes: notes?.trim() || undefined
+      });
+
+      setReviewResults((current) => ({ ...current, [milestoneId]: result }));
+      toast({ title: "Agent review stored", description: `0G root: ${result.rootHash}`, tone: "success" });
+    } catch (error) {
+      toast({
+        title: "Agent review failed",
+        description: error instanceof Error ? error.message : "Unable to run review",
+        tone: "error"
+      });
+    } finally {
+      setReviewingMilestoneId(undefined);
+    }
+  }
+
   return (
     <PageShell>
       <PageHeader
@@ -216,10 +263,13 @@ export function EscrowDetailView({ escrowId }: { escrowId: string }) {
                 key={milestone.id}
                 milestone={milestone}
                 index={index}
+                review={reviewResults[milestone.id]}
+                isReviewing={reviewingMilestoneId === milestone.id}
                 onSubmitEvidence={handleSubmitEvidence}
                 onApprove={handleApprove}
                 onRelease={handleRelease}
                 onDispute={handleDispute}
+                onRequestReview={handleRequestReview}
               />
             ))}
           </div>

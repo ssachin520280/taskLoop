@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@taskloop/shared"],
+  transpilePackages: ["@taskloop/shared", "@taskloop/agent"],
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,

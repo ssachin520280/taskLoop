@@ -6,27 +6,36 @@ import { Card, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/status-badge";
 import type { EvidenceItem, Milestone, MilestoneStatus } from "@/lib/mock-data";
 import { formatEth } from "@/lib/mock-data";
+import type { MilestoneReviewResult } from "@/lib/review-milestone-client";
 
 export function MilestoneWorkflowCard({
   milestone,
   index,
+  review,
+  isReviewing,
   onSubmitEvidence,
   onApprove,
   onRelease,
-  onDispute
+  onDispute,
+  onRequestReview
 }: {
   milestone: Milestone;
   index: number;
+  review?: MilestoneReviewResult;
+  isReviewing?: boolean;
   onSubmitEvidence: (milestoneId: string, label: string) => void;
   onApprove: (milestoneId: string) => void;
   onRelease: (milestoneId: string) => void;
   onDispute: (milestoneId: string) => void;
+  onRequestReview: (milestoneId: string, notes?: string) => void;
 }) {
   const [evidenceLabel, setEvidenceLabel] = useState("");
+  const [reviewNotes, setReviewNotes] = useState("");
   const canSubmit = milestone.status === "active" || milestone.status === "pending";
   const canApprove = milestone.status === "submitted";
   const canRelease = milestone.status === "approved";
   const canDispute = milestone.status === "submitted" || milestone.status === "active";
+  const hasEvidence = milestone.evidence.length > 0;
 
   return (
     <Card className={milestone.status === "disputed" ? "border-red-200 bg-red-50/60" : undefined}>
@@ -54,6 +63,7 @@ export function MilestoneWorkflowCard({
         </div>
 
         <EvidenceList evidence={milestone.evidence} />
+        {review ? <ReviewResult result={review} /> : null}
 
         <div className="grid gap-3 rounded-2xl border border-dashed border-stone-300 bg-white/70 p-4">
           <textarea
@@ -89,6 +99,29 @@ export function MilestoneWorkflowCard({
             </div>
           </div>
         </div>
+
+        <div className="grid gap-3 rounded-2xl border border-[var(--border)] bg-[#fff7df] p-4">
+          <div>
+            <p className="text-sm font-black text-[var(--ink)]">Agent review orchestration</p>
+            <p className="mt-1 text-xs leading-5 text-[var(--muted)]">
+              Sends milestone metadata and the latest evidence reference to the secure API route, then persists the final review to 0G.
+            </p>
+          </div>
+          <textarea
+            className="field-input min-h-16"
+            placeholder="Optional reviewer notes for the agent..."
+            value={reviewNotes}
+            onChange={(event) => setReviewNotes(event.target.value)}
+          />
+          <Button
+            type="button"
+            variant="yellow"
+            disabled={!hasEvidence || isReviewing}
+            onClick={() => onRequestReview(milestone.id, reviewNotes)}
+          >
+            {isReviewing ? "Reviewing..." : "Request agent review"}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
@@ -96,6 +129,26 @@ export function MilestoneWorkflowCard({
 
 export function nextMilestoneStatusAfterEvidence(status: MilestoneStatus): MilestoneStatus {
   return status === "pending" || status === "active" ? "submitted" : status;
+}
+
+function ReviewResult({ result }: { result: MilestoneReviewResult }) {
+  return (
+    <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm font-black capitalize text-emerald-950">{result.review.verdict.replace("_", " ")}</p>
+        <p className="text-xs font-bold text-emerald-800">{Math.round(result.review.confidence * 100)}% confidence</p>
+      </div>
+      <p className="mt-2 text-sm leading-6 text-emerald-900">{result.review.summary}</p>
+      <div className="mt-3 grid gap-1">
+        {result.review.reasons.map((reason) => (
+          <p key={reason} className="text-xs text-emerald-800">
+            {reason}
+          </p>
+        ))}
+      </div>
+      <p className="mt-3 break-all text-xs font-semibold text-emerald-900">0G root: {result.rootHash}</p>
+    </div>
+  );
 }
 
 function EvidenceList({ evidence }: { evidence: EvidenceItem[] }) {

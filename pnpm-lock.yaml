@@ -23,6 +23,9 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.100.6
         version: 5.100.6(react@19.2.5)
+      '@taskloop/agent':
+        specifier: workspace:^
+        version: link:../../services/agent
       '@taskloop/shared':
         specifier: workspace:*
         version: link:../../packages/shared
