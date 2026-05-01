@@ -32,19 +32,32 @@ export const tokenAmountSchema = z
   .string()
   .trim()
   .min(1, "Amount is required")
-  .regex(/^\d+(\.\d{1,18})?$/, "Use a valid ETH amount");
+  .regex(/^\d+(\.\d{1,18})?$/, "Use a valid ETH amount")
+  .refine((value) => Number(value) > 0, "Amount must be greater than zero");
 
 export const createEscrowMilestoneSchema = z.object({
   title: z.string().trim().min(1, "Milestone title is required").max(120),
   amountEth: tokenAmountSchema
 });
 
-export const createEscrowFormSchema = z.object({
-  title: z.string().trim().min(1, "Escrow title is required").max(120),
-  description: z.string().trim().max(1000).optional(),
-  freelancer: addressSchema,
-  milestones: z.array(createEscrowMilestoneSchema).min(1, "Add at least one milestone").max(12)
-});
+export const ensNameSchema = z
+  .string()
+  .trim()
+  .max(120)
+  .refine((value) => value.length === 0 || /^[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+$/.test(value), "Use a valid ENS name");
+
+export const createEscrowFormSchema = z
+  .object({
+    freelancer: addressSchema,
+    ensName: ensNameSchema.optional(),
+    title: z.string().trim().min(1, "Project title is required").max(120),
+    description: z.string().trim().min(1, "Project description is required").max(1000),
+    milestones: z.array(createEscrowMilestoneSchema).min(1, "Add at least one milestone").max(3, "Use up to 3 milestones")
+  })
+  .refine(
+    (value) => value.milestones.some((milestone) => Number(milestone.amountEth) > 0),
+    "Milestone total must be greater than zero"
+  );
 
 export const evidenceSubmissionFormSchema = z.object({
   milestoneId: z.coerce.number().int().min(0),

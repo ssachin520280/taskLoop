@@ -1,94 +1,272 @@
 "use client";
 
-import { useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  createEscrowFormSchema,
+  formatAddress,
+  formatTokenAmount,
+  type CreateEscrowFormInput
+} from "@taskloop/shared";
+import Link from "next/link";
+import { useState, type ReactNode } from "react";
+import { useFieldArray, useForm } from "react-hook-form";
 import { parseEther } from "viem";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClassName } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { formatEth } from "@/lib/mock-data";
+import { useCreateEscrow } from "@/hooks/use-create-escrow";
 
-const defaultMilestones = [
-  { title: "Scope confirmation", amount: "0.10" },
-  { title: "Working demo delivery", amount: "0.35" },
-  { title: "Final handoff", amount: "0.15" }
-];
+type FormStep = "edit" | "review" | "success";
 
-const defaultTotal = defaultMilestones.reduce((sum, milestone) => sum + parseEther(milestone.amount), 0n);
+const defaultValues: CreateEscrowFormInput = {
+  freelancer: "0x8ba1f109551bD432803012645Ac136ddd64DBA72",
+  ensName: "",
+  title: "Agent analytics dashboard",
+  description: "Deliver a working demo, include evidence links, and pass TaskLoop agent evaluation before payout.",
+  milestones: [
+    { title: "Scope confirmation", amountEth: "0.10" },
+    { title: "Working demo delivery", amountEth: "0.35" }
+  ]
+};
 
-export function CreateEscrowForm() {
-  const [role, setRole] = useState("client");
+function getTotalAmount(milestones: CreateEscrowFormInput["milestones"]): bigint {
+  return milestones.reduce((total, milestone) => {
+    try {
+      return total + parseEther(milestone.amountEth || "0");
+    } catch {
+      return total;
+    }
+  }, 0n);
+}
+
+export function CreateEscrowForm(): ReactNode {
+  const form = useForm<CreateEscrowFormInput>({
+    resolver: zodResolver(createEscrowFormSchema),
+    defaultValues,
+    mode: "onBlur"
+  });
+  const [step, setStep] = useState<FormStep>("edit");
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "milestones"
+  });
+  const { submitCreateEscrow, isSubmitting, result, error, resetCreateEscrow } = useCreateEscrow();
+
+  const values = form.watch();
+  const totalAmountWei = getTotalAmount(values.milestones);
+  const errors = form.formState.errors;
+
+  async function handleReview(): Promise<void> {
+    const isValid = await form.trigger();
+    if (isValid) {
+      setStep("review");
+    }
+  }
+
+  async function handleSubmit(valuesToSubmit: CreateEscrowFormInput): Promise<void> {
+    await submitCreateEscrow(valuesToSubmit);
+    setStep("success");
+  }
+
+  if (step === "success" && result) {
+    return (
+      <Card className="overflow-hidden">
+        <CardContent className="p-8 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[var(--brand)] text-2xl font-black text-[var(--ink)]">
+            OK
+          </div>
+          <h2 className="mt-6 text-3xl font-black text-[var(--ink)]">Escrow created</h2>
+          <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[var(--muted)]">
+            Mock submission succeeded. The adapter returned a demo escrow address and is ready to be swapped for a wagmi
+            contract write.
+          </p>
+          <div className="mt-5 rounded-2xl border border-[var(--border)] bg-[#fff7df] p-4 text-sm">
+            <p className="font-bold text-[var(--ink)]">{formatAddress(result.escrowAddress)}</p>
+            <p className="mt-1 text-[var(--muted)]">Mode: {result.mode}</p>
+          </div>
+          <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+            <Link href={`/escrows/${result.escrowId}`} className={buttonClassName("yellow")}>
+              Open escrow detail
+            </Link>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                resetCreateEscrow();
+                form.reset(defaultValues);
+                setStep("edit");
+              }}
+            >
+              Create another
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
       <CardHeader>
-        <h2 className="text-xl font-black text-[var(--ink)]">Escrow brief</h2>
-        <p className="mt-1 text-sm text-[var(--muted)]">Mock-first form for demoing the contract flow before writes are enabled.</p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-black text-[var(--ink)]">
+              {step === "review" ? "Review escrow" : "Escrow brief"}
+            </h2>
+            <p className="mt-1 text-sm text-[var(--muted)]">
+              {step === "review"
+                ? "Confirm the contract-shaped payload before mock submission."
+                : "Capture enough detail to fund milestones and route future contract writes."}
+            </p>
+          </div>
+          <div className="rounded-full bg-[#fff7df] px-3 py-1 text-xs font-black uppercase tracking-[0.16em] text-[var(--brand-strong)]">
+            {step === "review" ? "Step 2 of 2" : "Step 1 of 2"}
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
-        <form className="grid gap-5">
-          <label className="grid gap-2 text-sm font-semibold text-[var(--ink)]">
-            Your role
-            <select
-              className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 outline-none focus:border-[var(--brand-strong)] focus:ring-4 focus:ring-yellow-200/60"
-              value={role}
-              onChange={(event) => setRole(event.target.value)}
-            >
-              <option value="client">Client funding work</option>
-              <option value="freelancer">Freelancer proposing work</option>
-            </select>
-          </label>
+        <form className="grid gap-5" onSubmit={form.handleSubmit(handleSubmit)}>
+          {step === "edit" ? (
+            <>
+              <div className="grid gap-5 md:grid-cols-2">
+                <Field label="Freelancer wallet" error={errors.freelancer?.message}>
+                  <input
+                    className="field-input"
+                    placeholder="0x..."
+                    {...form.register("freelancer")}
+                  />
+                </Field>
+                <Field label="Optional ENS name" error={errors.ensName?.message}>
+                  <input className="field-input" placeholder="builder.eth" {...form.register("ensName")} />
+                </Field>
+              </div>
 
-          <div className="grid gap-5 md:grid-cols-2">
-            <label className="grid gap-2 text-sm font-semibold text-[var(--ink)]">
-              Project title
-              <input
-                className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 outline-none focus:border-[var(--brand-strong)] focus:ring-4 focus:ring-yellow-200/60"
-                defaultValue="Agent analytics dashboard"
-              />
-            </label>
-            <label className="grid gap-2 text-sm font-semibold text-[var(--ink)]">
-              Freelancer wallet
-              <input
-                className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 outline-none focus:border-[var(--brand-strong)] focus:ring-4 focus:ring-yellow-200/60"
-                defaultValue="0x8ba1f109551bD432803012645Ac136ddd64DBA72"
-              />
-            </label>
-          </div>
+              <Field label="Project title" error={errors.title?.message}>
+                <input className="field-input" {...form.register("title")} />
+              </Field>
 
-          <label className="grid gap-2 text-sm font-semibold text-[var(--ink)]">
-            Success criteria
-            <textarea
-              className="min-h-32 rounded-2xl border border-[var(--border)] bg-white px-4 py-3 outline-none focus:border-[var(--brand-strong)] focus:ring-4 focus:ring-yellow-200/60"
-              defaultValue="Deliver a working demo, include evidence links, and pass TaskLoop agent evaluation before payout."
-            />
-          </label>
+              <Field label="Project description" error={errors.description?.message}>
+                <textarea className="field-input min-h-32" {...form.register("description")} />
+              </Field>
 
-          <div className="rounded-2xl border border-[var(--border)] bg-[#fff7df] p-4">
-            <div className="flex items-center justify-between">
-              <p className="font-black text-[var(--ink)]">Milestones</p>
-              <p className="text-sm font-black text-[var(--ink)]">{formatEth(defaultTotal)}</p>
-            </div>
-            <div className="mt-4 grid gap-3">
-              {defaultMilestones.map((milestone, index) => (
-                <div key={milestone.title} className="flex items-center justify-between rounded-xl bg-white/80 p-3 text-sm">
-                  <span>
-                    {index + 1}. {milestone.title}
-                  </span>
-                  <strong>{milestone.amount} ETH</strong>
+              <div className="rounded-2xl border border-[var(--border)] bg-[#fff7df] p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="font-black text-[var(--ink)]">Milestones</p>
+                    <p className="mt-1 text-xs text-[var(--muted)]">Add 1 to 3 milestones. Each amount must be greater than zero.</p>
+                  </div>
+                  <p className="text-sm font-black text-[var(--ink)]">{formatTokenAmount(totalAmountWei)}</p>
                 </div>
-              ))}
+                <div className="mt-4 grid gap-3">
+                  {fields.map((field, index) => (
+                    <div key={field.id} className="rounded-2xl bg-white/80 p-4">
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <p className="text-sm font-black text-[var(--ink)]">Milestone {index + 1}</p>
+                        <Button type="button" variant="ghost" disabled={fields.length === 1} onClick={() => remove(index)}>
+                          Remove
+                        </Button>
+                      </div>
+                      <div className="grid gap-3 md:grid-cols-[1fr_10rem]">
+                        <Field label="Label" error={errors.milestones?.[index]?.title?.message}>
+                          <input className="field-input" {...form.register(`milestones.${index}.title`)} />
+                        </Field>
+                        <Field label="Amount" error={errors.milestones?.[index]?.amountEth?.message}>
+                          <input className="field-input" inputMode="decimal" {...form.register(`milestones.${index}.amountEth`)} />
+                        </Field>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="mt-4"
+                  disabled={fields.length >= 3}
+                  onClick={() => append({ title: `Milestone ${fields.length + 1}`, amountEth: "0.10" })}
+                >
+                  Add milestone
+                </Button>
+                {errors.milestones?.root?.message ? (
+                  <p className="mt-2 text-sm font-semibold text-red-700">{errors.milestones.root.message}</p>
+                ) : null}
+              </div>
+            </>
+          ) : (
+            <div className="grid gap-4">
+              <ReviewRow label="Freelancer" value={values.ensName ? `${values.ensName} (${formatAddress(values.freelancer)})` : formatAddress(values.freelancer)} />
+              <ReviewRow label="Project" value={values.title} />
+              <ReviewRow label="Description" value={values.description} />
+              <div className="rounded-2xl border border-[var(--border)] bg-[#fff7df] p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="font-black text-[var(--ink)]">Milestone total</p>
+                  <p className="font-black text-[var(--ink)]">{formatTokenAmount(totalAmountWei)}</p>
+                </div>
+                <div className="mt-4 grid gap-2">
+                  {values.milestones.map((milestone, index) => (
+                    <div key={`${milestone.title}-${index}`} className="flex items-center justify-between gap-3 rounded-xl bg-white/80 p-3 text-sm">
+                      <span>
+                        {index + 1}. {milestone.title}
+                      </span>
+                      <strong>{milestone.amountEth} ETH</strong>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="flex flex-col gap-3 rounded-2xl border border-dashed border-stone-300 bg-white/60 p-4 text-sm text-[var(--muted)] sm:flex-row sm:items-center sm:justify-between">
             <span>
-              {role === "client"
-                ? "Next contract step: fund escrow and emit TaskCreated."
-                : "Next contract step: send proposal to client for funding."}
+              {step === "review"
+                ? "Mock submit now. Later this button can call writeContract with the prepared adapter payload."
+                : "Validation runs before the review step so judges see a safe funding preview."}
             </span>
-            <Button type="button">Create mock escrow</Button>
+            <div className="flex gap-2">
+              {step === "review" ? (
+                <Button type="button" variant="secondary" disabled={isSubmitting} onClick={() => setStep("edit")}>
+                  Back
+                </Button>
+              ) : null}
+              {step === "review" ? (
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "Creating..." : "Submit mock escrow"}
+                </Button>
+              ) : (
+                <Button type="button" onClick={handleReview}>
+                  Review escrow
+                </Button>
+              )}
+            </div>
           </div>
+          {error ? <p className="text-sm font-semibold text-red-700">{error}</p> : null}
         </form>
       </CardContent>
     </Card>
+  );
+}
+
+function Field({
+  label,
+  error,
+  children
+}: {
+  label: string;
+  error?: string;
+  children: ReactNode;
+}): ReactNode {
+  return (
+    <label className="grid gap-2 text-sm font-semibold text-[var(--ink)]">
+      {label}
+      {children}
+      {error ? <span className="text-xs font-semibold text-red-700">{error}</span> : null}
+    </label>
+  );
+}
+
+function ReviewRow({ label, value }: { label: string; value?: string }): ReactNode {
+  return (
+    <div className="rounded-2xl border border-[var(--border)] bg-white p-4">
+      <p className="text-xs font-black uppercase tracking-[0.16em] text-[var(--muted)]">{label}</p>
+      <p className="mt-2 text-sm font-semibold text-[var(--ink)]">{value || "Not provided"}</p>
+    </div>
   );
 }
