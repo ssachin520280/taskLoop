@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { isAddress } from "viem";
 import { AgentReviewPanel } from "@/components/escrow/agent-review-panel";
 import { DisputePanel } from "@/components/escrow/dispute-panel";
+import { EnsTrustPanel } from "@/components/escrow/ens-trust-panel";
 import { FundingPanel } from "@/components/escrow/funding-panel";
 import { IdentityCard } from "@/components/escrow/identity-card";
 import { MilestoneWorkflowCard, nextMilestoneStatusAfterEvidence } from "@/components/escrow/milestone-workflow-card";
@@ -167,8 +168,13 @@ export function EscrowDetailView({ escrowId }: { escrowId: string }) {
       />
 
       <section className="mb-6 grid gap-4 md:grid-cols-3">
-        <IdentityCard label="Client" name={escrow.client} wallet={escrow.clientWallet} />
-        <IdentityCard label="Freelancer" name={escrow.freelancer} wallet={escrow.freelancerWallet} />
+        <IdentityCard label="Client identity" name={escrow.client} role="client" wallet={escrow.clientWallet} />
+        <IdentityCard
+          label="Freelancer identity"
+          name={escrow.freelancer}
+          role="freelancer"
+          wallet={escrow.freelancerWallet}
+        />
         <div className="rounded-[1.5rem] border border-[var(--border)] bg-white/75 p-5 shadow-sm shadow-black/5">
           <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--muted)]">Current state</p>
           <div className="mt-4 flex flex-wrap gap-2">
@@ -179,6 +185,10 @@ export function EscrowDetailView({ escrowId }: { escrowId: string }) {
           </div>
           <p className="mt-3 text-sm text-[var(--muted)]">Due {escrow.dueDate} on {escrow.chain}</p>
         </div>
+      </section>
+
+      <section className="mb-6">
+        <EnsTrustPanel />
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[1fr_24rem]">
