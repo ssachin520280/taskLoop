@@ -76,8 +76,7 @@ export function CreateEscrowForm(): ReactNode {
           </div>
           <h2 className="mt-6 text-3xl font-black text-[var(--ink)]">Escrow created</h2>
           <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[var(--muted)]">
-            Mock submission succeeded. The adapter returned a demo escrow address and is ready to be swapped for a wagmi
-            contract write.
+            Escrow submission completed. If a factory address is configured, this came from the contract transaction receipt.
           </p>
           <div className="mt-5 rounded-2xl border border-[var(--border)] bg-[#fff7df] p-4 text-sm">
             <p className="font-bold text-[var(--ink)]">{formatAddress(result.escrowAddress)}</p>
@@ -114,7 +113,7 @@ export function CreateEscrowForm(): ReactNode {
             </h2>
             <p className="mt-1 text-sm text-[var(--muted)]">
               {step === "review"
-                ? "Confirm the contract-shaped payload before mock submission."
+                ? "Confirm the contract-shaped payload before submission."
                 : "Capture enough detail to fund milestones and route future contract writes."}
             </p>
           </div>
@@ -217,7 +216,7 @@ export function CreateEscrowForm(): ReactNode {
           <div className="flex flex-col gap-3 rounded-2xl border border-dashed border-stone-300 bg-white/60 p-4 text-sm text-[var(--muted)] sm:flex-row sm:items-center sm:justify-between">
             <span>
               {step === "review"
-                ? "Mock submit now. Later this button can call writeContract with the prepared adapter payload."
+                ? "Submit with wagmi when a factory address is configured, otherwise fall back to demo mode."
                 : "Validation runs before the review step so judges see a safe funding preview."}
             </span>
             <div className="flex gap-2">
@@ -228,7 +227,7 @@ export function CreateEscrowForm(): ReactNode {
               ) : null}
               {step === "review" ? (
                 <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? "Creating..." : "Submit mock escrow"}
+                  {isSubmitting ? "Creating..." : "Submit escrow"}
                 </Button>
               ) : (
                 <Button type="button" onClick={handleReview}>
