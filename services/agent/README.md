@@ -26,3 +26,48 @@ Expected workflow:
 4. Call `getFileMetadata(rootHash)` when you need to confirm indexer availability before referencing the artifact.
 
 The implementation lives in `src/storage/zero-g.ts` and intentionally supports only small single-file uploads for hackathon clarity.
+
+## Milestone Review Engine
+
+`src/review` provides a deterministic-first review engine for submitted milestone evidence.
+
+```ts
+import { reviewMilestoneEvidence } from "./src/review";
+
+const result = await reviewMilestoneEvidence({
+  escrow: {
+    escrowId: "escrow-101",
+    title: "Landing page refresh",
+    description: "Refresh the demo landing page"
+  },
+  milestone: {
+    milestoneId: "m2",
+    title: "Responsive implementation",
+    amountEth: "0.32"
+  },
+  evidenceUri: "ipfs://...",
+  freelancerNotes: "Preview deployment, screenshot diff, and commit hash are included."
+});
+
+console.log(result.review.verdict);
+console.log(result.rootHash);
+```
+
+Output shape:
+
+```ts
+{
+  review: {
+    verdict: "approve" | "needs_review" | "reject",
+    confidence: number,
+    summary: string,
+    reasons: string[],
+    recommendedAction: "release" | "request_more_info" | "dispute_review",
+    generatedAt: string
+  },
+  rootHash: string,
+  txHash?: string
+}
+```
+
+The engine starts with deterministic rules and accepts an optional `AgentReviewProvider` so any LLM or agent runtime can refine the draft without coupling TaskLoop to one vendor. The final review payload is persisted to 0G Storage with `uploadJson`.
