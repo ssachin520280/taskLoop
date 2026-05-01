@@ -5,10 +5,51 @@ export enum TaskStatus {
   Failed = "failed"
 }
 
+export enum EscrowStatus {
+  Created = "created",
+  Funded = "funded",
+  Cancelled = "cancelled",
+  Completed = "completed"
+}
+
+export enum MilestoneStatus {
+  Pending = "pending",
+  EvidenceSubmitted = "evidence_submitted",
+  Approved = "approved",
+  Released = "released",
+  Disputed = "disputed"
+}
+
+export type Address = `0x${string}`;
+
+export type Milestone = {
+  id: number;
+  title: string;
+  amountWei: bigint;
+  evidence?: string;
+  status: MilestoneStatus;
+  submittedAt?: number;
+  approvedAt?: number;
+  releasedAt?: number;
+};
+
+export type Escrow = {
+  id: string;
+  contractAddress: Address;
+  client: Address;
+  freelancer: Address;
+  totalAmountWei: bigint;
+  releasedAmountWei: bigint;
+  status: EscrowStatus;
+  milestones: Milestone[];
+  createdAt?: number;
+  chainId?: number;
+};
+
 export type AgentTask = {
   id: string;
   prompt: string;
-  requester: `0x${string}`;
+  requester: Address;
   status: TaskStatus;
   createdAt: string;
 };

@@ -13,6 +13,7 @@
     "build": "tsc -p tsconfig.json",
     "test": "tsc --noEmit",
     "lint": "tsc --noEmit",
+    "sync:abis": "node scripts/sync-abis.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
