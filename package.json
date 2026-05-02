@@ -10,6 +10,7 @@
     "lint": "pnpm -r lint",
     "format": "prettier --write .",
     "typecheck": "pnpm -r typecheck",
+    "demo:seed": "node scripts/seed-demo.mjs",
     "contracts:build": "pnpm --filter @taskloop/contracts build",
     "contracts:test": "pnpm --filter @taskloop/contracts test"
   },

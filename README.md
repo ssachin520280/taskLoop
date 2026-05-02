@@ -93,6 +93,7 @@ pnpm dev
 Useful commands:
 
 ```bash
+pnpm demo:seed
 pnpm typecheck
 pnpm lint
 pnpm build
@@ -100,6 +101,8 @@ pnpm contracts:test
 pnpm --filter @taskloop/web dev
 pnpm --filter @taskloop/agent dev
 ```
+
+`pnpm demo:seed` regenerates `apps/web/lib/demo-seed.json` with one escrow deal: deterministic client/freelancer addresses, three milestones, evidence metadata, and a sample 0G-backed agent review payload. The web mock data imports this fixture automatically, so restart `pnpm dev` after regenerating it.
 
 ## Environment Variables
 

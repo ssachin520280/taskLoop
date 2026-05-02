@@ -1,4 +1,5 @@
 import { formatEther, parseEther } from "viem";
+import demoSeed from "./demo-seed.json";
 
 export type UserRole = "client" | "freelancer";
 
@@ -14,6 +15,21 @@ export type EvidenceItem = {
   submittedBy: UserRole | "agent";
   submittedAt: string;
   uri?: string;
+};
+
+export type AgentReviewPayload = {
+  verdict: "approve" | "needs_review" | "reject";
+  confidence: number;
+  summary: string;
+  reasons: string[];
+  recommendedAction: "release" | "request_more_info" | "dispute_review";
+  generatedAt: string;
+  rootHash: string;
+  execution?: {
+    status: "executed" | "skipped";
+    reason: string;
+    rootHash: string;
+  };
 };
 
 export type Milestone = {
@@ -46,6 +62,7 @@ export type Escrow = {
   chain: string;
   milestones: Milestone[];
   evidence: EvidenceItem[];
+  agentReview?: AgentReviewPayload;
   dispute?: {
     milestoneId: string;
     reason: string;
@@ -57,6 +74,7 @@ export type Escrow = {
 export const demoAddress = "0x8ba1f109551bD432803012645Ac136ddd64DBA72" as const;
 
 export const escrows: Escrow[] = [
+  toEscrow(demoSeed.escrow as DemoSeedEscrow),
   {
     id: "escrow-101",
     title: "Agent landing page refresh",
@@ -268,6 +286,24 @@ export const escrows: Escrow[] = [
     }
   }
 ];
+
+type DemoSeedEscrow = Omit<Escrow, "milestones" | "evidence"> & {
+  milestones: Array<Omit<Milestone, "amountWei" | "evidenceCount"> & { amountEth: string }>;
+};
+
+function toEscrow(seedEscrow: DemoSeedEscrow): Escrow {
+  const milestones = seedEscrow.milestones.map((milestone) => ({
+    ...milestone,
+    amountWei: parseEther(milestone.amountEth),
+    evidenceCount: milestone.evidence.length
+  }));
+
+  return {
+    ...seedEscrow,
+    milestones,
+    evidence: milestones.flatMap((milestone) => milestone.evidence)
+  };
+}
 
 export function getEscrow(id: string): Escrow | undefined {
   return escrows.find((escrow) => escrow.id === id);
