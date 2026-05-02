@@ -4,8 +4,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/status-badge";
-import type { EvidenceItem, Milestone, MilestoneStatus } from "@/lib/mock-data";
-import { formatEth } from "@/lib/mock-data";
+import type { EvidenceItem, Milestone, MilestoneStatus } from "@/lib/escrow";
+import { formatEth } from "@/lib/escrow";
 import type { MilestoneReviewResult } from "@/lib/review-milestone-client";
 
 export function MilestoneWorkflowCard({
@@ -74,7 +74,7 @@ export function MilestoneWorkflowCard({
             onChange={(event) => setEvidenceLabel(event.target.value)}
           />
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs text-[var(--muted)]">Mock actions update this page only. Contract writes plug in later.</p>
+            <p className="text-xs text-[var(--muted)]">Actions submit wallet transactions to the escrow contract.</p>
             <div className="flex flex-wrap gap-2">
               <Button
                 type="button"

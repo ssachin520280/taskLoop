@@ -1,10 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import { EscrowCard } from "@/components/escrow-card";
 import { PageShell } from "@/components/page-shell";
 import { buttonClassName } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { escrows } from "@/lib/mock-data";
 
 const loopSteps = [
   {
@@ -38,10 +36,10 @@ export default function Home() {
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link href="/dashboard" className={buttonClassName("yellow", "px-6 py-3")}>
-              Open demo dashboard
+              Open dashboard
             </Link>
             <Link href="/escrows/new" className={buttonClassName("secondary", "px-6 py-3")}>
-              Create mock escrow
+              Create escrow
             </Link>
           </div>
         </div>
@@ -52,9 +50,9 @@ export default function Home() {
               <Image src="/taskLoop_logo.png" alt="TaskLoop logo" width={170} height={170} className="object-contain" priority />
             </div>
             <div className="mt-8 rounded-2xl bg-white p-5">
-              <p className="text-sm font-bold text-[var(--muted)]">Demo-ready status</p>
-              <p className="mt-2 text-3xl font-black text-[var(--ink)]">3 escrows - 7 milestones</p>
-              <p className="mt-2 text-sm text-[var(--muted)]">Mock data now, contract calls next.</p>
+              <p className="text-sm font-bold text-[var(--muted)]">Contract-ready status</p>
+              <p className="mt-2 text-3xl font-black text-[var(--ink)]">Factory reads + escrow writes</p>
+              <p className="mt-2 text-sm text-[var(--muted)]">Dashboard data comes from deployed TaskLoop contracts.</p>
             </div>
           </CardContent>
         </Card>
@@ -72,21 +70,16 @@ export default function Home() {
         ))}
       </section>
 
-      <section className="mt-12">
-        <div className="mb-4 flex items-end justify-between gap-4">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-[var(--brand-strong)]">Sample flow</p>
-            <h2 className="mt-2 text-2xl font-black text-[var(--ink)]">Live mock escrows</h2>
-          </div>
-          <Link href="/dashboard" className={buttonClassName("ghost")}>
-            View all
-          </Link>
-        </div>
-        <div className="grid gap-4 lg:grid-cols-3">
-          {escrows.map((escrow) => (
-            <EscrowCard key={escrow.id} escrow={escrow} />
-          ))}
-        </div>
+      <section className="mt-12 rounded-[1.5rem] border border-[var(--border)] bg-white/75 p-6 shadow-sm shadow-black/5">
+        <p className="text-xs font-black uppercase tracking-[0.2em] text-[var(--brand-strong)]">Live contract flow</p>
+        <h2 className="mt-2 text-2xl font-black text-[var(--ink)]">Read records from the factory, then act on each escrow.</h2>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted)]">
+          Open the dashboard to load total escrows, connected-wallet client/freelancer buckets, and milestone records from
+          the deployed contracts.
+        </p>
+        <Link href="/dashboard" className={buttonClassName("ghost", "mt-5")}>
+          View live escrows
+        </Link>
       </section>
     </PageShell>
   );

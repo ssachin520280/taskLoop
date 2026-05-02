@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { StatusBadge } from "@/components/status-badge";
-import type { Escrow } from "@/lib/mock-data";
-import { escrowTotal, formatEth } from "@/lib/mock-data";
+import type { Escrow } from "@/lib/escrow";
+import { escrowTotal, formatEth } from "@/lib/escrow";
 
 export function PayoutTimeline({ escrow }: { escrow: Escrow }) {
   return (

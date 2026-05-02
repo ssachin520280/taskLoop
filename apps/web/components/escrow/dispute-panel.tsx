@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import type { Escrow } from "@/lib/mock-data";
+import type { Escrow } from "@/lib/escrow";
 
 export function DisputePanel({ dispute }: { dispute?: Escrow["dispute"] }) {
   if (!dispute) {

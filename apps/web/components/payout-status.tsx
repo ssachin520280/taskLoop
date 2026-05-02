@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { StatusBadge } from "@/components/status-badge";
-import { escrowTotal, formatEth, type Escrow } from "@/lib/mock-data";
+import { escrowTotal, formatEth, type Escrow } from "@/lib/escrow";
 
 export function PayoutStatus({ escrow }: { escrow: Escrow }) {
   const paidCount = escrow.milestones.filter((milestone) => milestone.status === "paid").length;
@@ -12,7 +12,7 @@ export function PayoutStatus({ escrow }: { escrow: Escrow }) {
         <div className="flex items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-black text-[var(--ink)]">Payout status</h2>
-            <p className="mt-1 text-sm text-[var(--muted)]">Funds are mocked until contract integration is connected.</p>
+            <p className="mt-1 text-sm text-[var(--muted)]">Funds and milestone state are read from the escrow contract.</p>
           </div>
           <StatusBadge status={escrow.status} />
         </div>

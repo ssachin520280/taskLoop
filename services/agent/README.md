@@ -36,9 +36,9 @@ import { reviewMilestoneEvidence } from "./src/review";
 
 const result = await reviewMilestoneEvidence({
   escrow: {
-    escrowId: "escrow-101",
+    escrowId: "0x1234567890abcdef1234567890abcdef12345678",
     title: "Landing page refresh",
-    description: "Refresh the demo landing page"
+    description: "Refresh the landing page"
   },
   milestone: {
     milestoneId: "m2",
@@ -105,7 +105,7 @@ Expected workflow:
 1. Build or load the milestone review decision.
 2. Call `executeMilestoneRelease({ chainId, escrowAddress, milestoneId, amount, reason })`, where `amount` is a contract-ready decimal string such as wei.
 3. If `KEEPERHUB_API_URL` and `KEEPERHUB_API_KEY` are configured, the adapter sends a generic HTTP request ready for KeeperHub or MCP-backed execution.
-4. If KeeperHub config is missing, the adapter returns a local mock execution result so the demo flow still works without credentials.
+4. If KeeperHub config is missing, the adapter returns a failed configuration result instead of fabricating execution.
 
 `KEEPERHUB_EXPLORER_BASE_URL` is optional. Leave it blank to use built-in explorer defaults for supported chains, or set it when KeeperHub returns transactions for a custom chain.
 
@@ -157,7 +157,7 @@ TASKLOOP_REVIEW_API_KEY=replace_me_for_release_execution
 TASKLOOP_RELEASE_CONFIDENCE_THRESHOLD=0.85
 ```
 
-When release details are omitted, the response still includes a skipped execution log. This keeps local demos safe while allowing real contract escrows to trigger KeeperHub-backed payout execution.
+When release details are omitted, the response still includes a skipped execution log. This keeps review-only runs safe while allowing real contract escrows to trigger KeeperHub-backed payout execution.
 
 The web API route requires `TASKLOOP_REVIEW_API_KEY` before it will accept release execution details. Until a real session or wallet-signature auth layer is added, this prevents an unauthenticated request from triggering KeeperHub execution.
 

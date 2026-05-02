@@ -5,10 +5,20 @@ import { useMemo, useState } from "react";
 import { isAddress, type Hex } from "viem";
 import { usePublicClient, useReadContracts, useWriteContract } from "wagmi";
 import { useToast } from "@/components/toast-provider";
-import type { Escrow, FundingStatus, Milestone, MilestoneStatus } from "@/lib/mock-data";
-import { escrowTotal } from "@/lib/mock-data";
+import type { Escrow, FundingStatus, Milestone, MilestoneStatus } from "@/lib/escrow";
+import { escrowTotal } from "@/lib/escrow";
 
-type ChainMilestone = readonly [string, bigint, string, number, bigint, bigint, bigint];
+type ChainMilestoneTuple = readonly [string, bigint, string, number, bigint, bigint, bigint];
+type ChainMilestoneObject = {
+  title: string;
+  amount: bigint;
+  evidence: string;
+  status: number;
+  submittedAt: bigint;
+  approvedAt: bigint;
+  releasedAt: bigint;
+};
+type ChainMilestone = ChainMilestoneTuple | ChainMilestoneObject;
 
 export type EscrowContractState = {
   escrow?: Escrow;
@@ -28,7 +38,7 @@ export type EscrowContractState = {
 const escrowStatusLabels = ["pending", "funded", "released", "released"] as const;
 const milestoneStatusLabels: MilestoneStatus[] = ["pending", "submitted", "approved", "paid", "disputed"];
 
-export function useEscrowContract(escrowId: string, fallback?: Escrow): EscrowContractState {
+export function useEscrowContract(escrowId: string): EscrowContractState {
   const address = isAddress(escrowId) ? escrowId : undefined;
   const publicClient = usePublicClient();
   const { writeContractAsync } = useWriteContract();
@@ -76,27 +86,26 @@ export function useEscrowContract(escrowId: string, fallback?: Escrow): EscrowCo
 
     return {
       id: address,
-      title: fallback?.title ?? "Onchain TaskLoop escrow",
-      summary: fallback?.summary ?? "Live escrow loaded from the MilestoneEscrow contract.",
-      description: fallback?.description ?? "This escrow is read directly from chain. Project metadata can be added offchain later.",
-      client: fallback?.client ?? "Client wallet",
+      title: "Onchain TaskLoop escrow",
+      summary: "Live escrow loaded from the MilestoneEscrow contract.",
+      description: "This escrow is read directly from chain. Project metadata can be added offchain later.",
+      client: "Client wallet",
       clientWallet: client,
-      freelancer: fallback?.freelancer ?? "Freelancer wallet",
+      freelancer: "Freelancer wallet",
       freelancerWallet: freelancer,
-      role: fallback?.role ?? "client",
+      role: "client",
       status: escrowStatusLabels[Number(status)] ?? "pending",
       fundingStatus,
-      dueDate: fallback?.dueDate ?? "Onchain",
-      createdAt: fallback?.createdAt ?? "Onchain",
-      agentScore: fallback?.agentScore ?? 0,
-      agentRecommendation: fallback?.agentRecommendation ?? "Agent review will run after evidence submission.",
-      chain: fallback?.chain ?? "Connected chain",
+      dueDate: "Onchain",
+      createdAt: "Onchain",
+      agentScore: 0,
+      agentRecommendation: "Agent review will run after evidence submission.",
+      chain: "Connected chain",
       milestones: mappedMilestones,
       evidence: mappedMilestones.flatMap((milestone) => milestone.evidence),
-      dispute: fallback?.dispute
     } satisfies Escrow;
-  }, [address, data, fallback]);
-  const payableAmountWei = chainEscrow ? escrowTotal(chainEscrow) : fallback ? escrowTotal(fallback) : 0n;
+  }, [address, data]);
+  const payableAmountWei = chainEscrow ? escrowTotal(chainEscrow) : 0n;
 
   async function runWrite(label: string, request: (contractAddress: `0x${string}`) => Promise<Hex>): Promise<void> {
     const contractAddress = address;
@@ -184,7 +193,7 @@ export function useEscrowContract(escrowId: string, fallback?: Escrow): EscrowCo
 }
 
 function mapChainMilestone(milestone: ChainMilestone, index: number): Milestone {
-  const [title, amountWei, evidence, status] = milestone;
+  const { title, amountWei, evidence, status } = readChainMilestone(milestone);
   const hasEvidence = evidence.length > 0;
 
   return {
@@ -209,6 +218,29 @@ function mapChainMilestone(milestone: ChainMilestone, index: number): Milestone 
   };
 }
 
+function readChainMilestone(milestone: ChainMilestone): {
+  title: string;
+  amountWei: bigint;
+  evidence: string;
+  status: number;
+} {
+  if (isChainMilestoneObject(milestone)) {
+    return {
+      title: milestone.title,
+      amountWei: milestone.amount,
+      evidence: milestone.evidence,
+      status: milestone.status
+    };
+  }
+
+  const [title, amountWei, evidence, status] = milestone;
+  return { title, amountWei, evidence, status };
+}
+
+function isChainMilestoneObject(milestone: ChainMilestone): milestone is ChainMilestoneObject {
+  return "title" in milestone;
+}
+
 function mapFundingStatus(status: number, totalAmount: bigint, releasedAmount: bigint): FundingStatus {
   if (status === 0) {
     return "unfunded";
@@ -227,8 +259,8 @@ function mapFundingStatus(status: number, totalAmount: bigint, releasedAmount: b
 
 function readMilestoneIndex(milestoneId: string): number {
   if (milestoneId.startsWith("m")) {
-    const parsedMockId = Number(milestoneId.slice(1));
-    return Number.isNaN(parsedMockId) ? 0 : Math.max(parsedMockId - 1, 0);
+    const parsedId = Number(milestoneId.slice(1));
+    return Number.isNaN(parsedId) ? 0 : Math.max(parsedId - 1, 0);
   }
 
   const parsed = Number(milestoneId);

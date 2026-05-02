@@ -10,5 +10,4 @@ export async function executeMilestoneRelease(input: MilestoneReleaseInput): Pro
 }
 
 export { KeeperHubExecutionProvider, readKeeperHubConfig } from "./keeperhub-provider";
-export { MockExecutionProvider } from "./mock-provider";
 export type { ExecutionProvider, ExecutionStatus, MilestoneExecutionResult, MilestoneReleaseInput } from "./types";

@@ -1,6 +1,6 @@
 "use client";
 
-import type { UserRole } from "@/lib/mock-data";
+import type { UserRole } from "@/lib/escrow";
 import { cn } from "@/lib/utils";
 
 const options: Array<{ value: UserRole; label: string }> = [

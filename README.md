@@ -59,7 +59,7 @@ The agent service stores milestone reviews, decision payloads, and execution log
 
 ### KeeperHub for Reliable Execution
 
-TaskLoop includes a `KeeperHubExecutionProvider` behind a generic `ExecutionProvider` interface. When KeeperHub credentials are configured, the agent can route approved milestone releases through KeeperHub. When credentials are missing, the adapter safely falls back to a mock provider for local demos.
+TaskLoop includes a `KeeperHubExecutionProvider` behind a generic `ExecutionProvider` interface. When KeeperHub credentials are configured, the agent can route approved milestone releases through KeeperHub. When credentials are missing, release execution returns a configuration failure instead of fabricating a transaction.
 
 ## Smart Contracts
 
@@ -93,7 +93,6 @@ pnpm dev
 Useful commands:
 
 ```bash
-pnpm demo:seed
 pnpm typecheck
 pnpm lint
 pnpm build
@@ -102,7 +101,7 @@ pnpm --filter @taskloop/web dev
 pnpm --filter @taskloop/agent dev
 ```
 
-`pnpm demo:seed` regenerates `apps/web/lib/demo-seed.json` with one escrow deal: deterministic client/freelancer addresses, three milestones, evidence metadata, and a sample 0G-backed agent review payload. The web mock data imports this fixture automatically, so restart `pnpm dev` after regenerating it.
+The web dashboard reads escrow counts, account-linked escrows, and escrow records from `NEXT_PUBLIC_ESCROW_FACTORY_ADDRESS`.
 
 ## Environment Variables
 
@@ -135,7 +134,7 @@ KEEPERHUB_WORKFLOW_ID=taskloop-release-milestone
 KEEPERHUB_EXPLORER_BASE_URL=
 ```
 
-For local demos, KeeperHub env vars can be empty; the execution adapter returns a mock execution result. To trigger trusted release execution through the API route, configure `TASKLOOP_REVIEW_API_KEY` and provide the key from a server-to-server caller.
+For release execution through the API route, configure `TASKLOOP_REVIEW_API_KEY` and provide the key from a server-to-server caller. KeeperHub env vars must be set for execution to submit work; otherwise the adapter returns a failed configuration result.
 
 ## Deployment
 
@@ -168,10 +167,10 @@ pnpm --filter @taskloop/agent start
 
 Run the agent service anywhere Node.js is supported. Configure 0G credentials for persistent review storage and KeeperHub credentials for real execution routing.
 
-## Demo Flow
+## Live Flow
 
 1. Open the landing page and connect a wallet.
-2. Go to the dashboard and open a demo escrow.
+2. Go to the dashboard and open a factory-created escrow.
 3. Review readable client/freelancer identities with ENS fallbacks.
 4. Submit milestone evidence as the freelancer.
 5. Request an agent review from the milestone card.

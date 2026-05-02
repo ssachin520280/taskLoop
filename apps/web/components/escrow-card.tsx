@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/status-badge";
 import { buttonClassName } from "@/components/ui/button";
-import { escrowTotal, formatEth, type Escrow } from "@/lib/mock-data";
+import { escrowTotal, formatEth, type Escrow } from "@/lib/escrow";
 
 export function EscrowCard({ escrow }: { escrow: Escrow }) {
   return (

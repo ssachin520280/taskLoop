@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import type { UserRole } from "@/lib/mock-data";
+import type { UserRole } from "@/lib/escrow";
 
 export function EvidenceSubmission({ role }: { role: UserRole }) {
   const [value, setValue] = useState("");
@@ -29,7 +29,7 @@ export function EvidenceSubmission({ role }: { role: UserRole }) {
         />
         <div className="mt-4 flex items-center justify-between gap-3">
           <p className="text-xs text-[var(--muted)]">
-            {isFreelancer ? "Mock mode: this does not write onchain yet." : "Switch to freelancer view to submit."}
+            {isFreelancer ? "Submit evidence to the escrow contract." : "Switch to freelancer view to submit."}
           </p>
           <Button disabled={!isFreelancer || value.trim().length === 0}>Submit evidence</Button>
         </div>

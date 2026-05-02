@@ -6,7 +6,7 @@ export type MilestoneReleaseInput = {
   reason: string;
 };
 
-export type ExecutionStatus = "mocked" | "queued" | "submitted" | "confirmed" | "failed";
+export type ExecutionStatus = "queued" | "submitted" | "confirmed" | "failed";
 
 export type MilestoneExecutionResult = {
   status: ExecutionStatus;

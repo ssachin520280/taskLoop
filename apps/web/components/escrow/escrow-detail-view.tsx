@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { isAddress } from "viem";
 import { AgentReviewPanel } from "@/components/escrow/agent-review-panel";
 import { DisputePanel } from "@/components/escrow/dispute-panel";
 import { EnsTrustPanel } from "@/components/escrow/ens-trust-panel";
 import { FundingPanel } from "@/components/escrow/funding-panel";
 import { IdentityCard } from "@/components/escrow/identity-card";
-import { MilestoneWorkflowCard, nextMilestoneStatusAfterEvidence } from "@/components/escrow/milestone-workflow-card";
+import { MilestoneWorkflowCard } from "@/components/escrow/milestone-workflow-card";
 import { PayoutTimeline } from "@/components/escrow/payout-timeline";
 import { PageHeader, PageShell } from "@/components/page-shell";
 import { PayoutStatus } from "@/components/payout-status";
@@ -17,33 +17,20 @@ import { useToast } from "@/components/toast-provider";
 import { buttonClassName } from "@/components/ui/button";
 import { EmptyState, LoadingState } from "@/components/ui/state";
 import { useEscrowContract } from "@/hooks/use-escrow-contract";
-import type { Escrow, EvidenceItem, FundingStatus, Milestone } from "@/lib/mock-data";
-import { formatEth, getEscrow } from "@/lib/mock-data";
+import { formatEth } from "@/lib/escrow";
 import { requestMilestoneReview, type MilestoneReviewResult } from "@/lib/review-milestone-client";
 
 export function EscrowDetailView({ escrowId }: { escrowId: string }) {
   const isContractEscrow = isAddress(escrowId);
-  const initialEscrow = useMemo(() => getEscrow(escrowId), [escrowId]);
-  const [milestones, setMilestones] = useState<Milestone[]>(() => initialEscrow?.milestones ?? []);
-  const [fundingStatus, setFundingStatus] = useState<FundingStatus>(initialEscrow?.fundingStatus ?? "unfunded");
-  const [dispute, setDispute] = useState<Escrow["dispute"]>(initialEscrow?.dispute);
   const [reviewResults, setReviewResults] = useState<Record<string, MilestoneReviewResult>>({});
   const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string>();
   const { toast } = useToast();
-  const contract = useEscrowContract(escrowId, initialEscrow);
+  const contract = useEscrowContract(escrowId);
 
-  if (isContractEscrow && contract.isReading && !contract.escrow) {
+  if (!isContractEscrow) {
     return (
       <PageShell>
-        <LoadingState label="Reading escrow from chain..." />
-      </PageShell>
-    );
-  }
-
-  if (!initialEscrow && !contract.escrow) {
-    return (
-      <PageShell>
-        <EmptyState title="Escrow not found" description="This mock escrow is not available in the demo data." />
+        <EmptyState title="Escrow not found" description="Escrow detail requires a deployed escrow contract address." />
         <div className="mt-5 flex justify-center">
           <Link href="/dashboard" className={buttonClassName("yellow")}>
             Back to dashboard
@@ -53,108 +40,49 @@ export function EscrowDetailView({ escrowId }: { escrowId: string }) {
     );
   }
 
-  const localEscrow = initialEscrow
-    ? {
-        ...initialEscrow,
-        fundingStatus,
-        milestones,
-        evidence: milestones.flatMap((milestone) => milestone.evidence),
-        dispute,
-        status: dispute ? "disputed" : deriveEscrowStatus(fundingStatus, milestones)
-      }
-    : undefined;
-  const escrow = contract.escrow ?? localEscrow!;
-  const visibleMilestones = contract.escrow ? escrow.milestones : milestones;
-  const visibleFundingStatus = contract.escrow ? escrow.fundingStatus : fundingStatus;
-
-  function handleSubmitEvidence(milestoneId: string, label: string) {
-    if (contract.escrow) {
-      void contract.actions.submitEvidence(milestoneId, label.trim());
-      return;
-    }
-
-    setMilestones((current) =>
-      current.map((milestone) => {
-        if (milestone.id !== milestoneId) {
-          return milestone;
-        }
-
-        const evidence: EvidenceItem = {
-          id: `${milestone.id}-ev-${milestone.evidence.length + 1}`,
-          label: label.trim(),
-          submittedBy: "freelancer",
-          submittedAt: "Just now"
-        };
-        const evidenceItems = [...milestone.evidence, evidence];
-
-        return {
-          ...milestone,
-          evidence: evidenceItems,
-          evidenceCount: evidenceItems.length,
-          status: nextMilestoneStatusAfterEvidence(milestone.status)
-        };
-      })
+  if (contract.isReading && !contract.escrow) {
+    return (
+      <PageShell>
+        <LoadingState label="Reading escrow from chain..." />
+      </PageShell>
     );
-    toast({ title: "Evidence submitted", description: "Demo state updated locally.", tone: "success" });
   }
 
-  function updateMilestoneStatus(milestoneId: string, status: Milestone["status"]) {
-    setMilestones((current) =>
-      current.map((milestone) => (milestone.id === milestoneId ? { ...milestone, status } : milestone))
+  if (!contract.escrow) {
+    return (
+      <PageShell>
+        <EmptyState title="Escrow not found" description="No escrow contract data could be read for this address." />
+        <div className="mt-5 flex justify-center">
+          <Link href="/dashboard" className={buttonClassName("yellow")}>
+            Back to dashboard
+          </Link>
+        </div>
+      </PageShell>
     );
+  }
+
+  const escrow = contract.escrow;
+  const visibleMilestones = escrow.milestones;
+  const visibleFundingStatus = escrow.fundingStatus;
+
+  function handleSubmitEvidence(milestoneId: string, label: string) {
+    void contract.actions.submitEvidence(milestoneId, label.trim());
   }
 
   function handleDispute(milestoneId: string) {
-    if (contract.escrow) {
-      void contract.actions.disputeMilestone(milestoneId);
-      return;
-    }
-
-    updateMilestoneStatus(milestoneId, "disputed");
-    setDispute({
-      milestoneId,
-      reason: "Manual demo dispute: evidence needs a clearer acceptance check.",
-      openedBy: "client",
-      openedAt: "Just now"
-    });
-    toast({ title: "Dispute opened", description: "Demo state updated locally.", tone: "info" });
+    void contract.actions.disputeMilestone(milestoneId);
   }
 
   function handleRelease(milestoneId: string) {
-    if (contract.escrow) {
-      void contract.actions.releaseMilestone(milestoneId);
-      return;
-    }
-
-    setMilestones((current) => {
-      const updatedMilestones = current.map((milestone) =>
-        milestone.id === milestoneId ? { ...milestone, status: "paid" as const } : milestone
-      );
-
-      setFundingStatus(updatedMilestones.every((milestone) => milestone.status === "paid") ? "completed" : "partially_released");
-      return updatedMilestones;
-    });
-    toast({ title: "Milestone released", description: "Demo payout state updated locally.", tone: "success" });
+    void contract.actions.releaseMilestone(milestoneId);
   }
 
   function handleApprove(milestoneId: string) {
-    if (contract.escrow) {
-      void contract.actions.approveMilestone(milestoneId);
-      return;
-    }
-
-    updateMilestoneStatus(milestoneId, "approved");
-    toast({ title: "Milestone approved", description: "Demo state updated locally.", tone: "success" });
+    void contract.actions.approveMilestone(milestoneId);
   }
 
   function handleFund() {
-    if (contract.escrow) {
-      void contract.actions.fundEscrow();
-      return;
-    }
-
-    setFundingStatus("funded");
-    toast({ title: "Escrow funded", description: "Demo state updated locally.", tone: "success" });
+    void contract.actions.fundEscrow();
   }
 
   async function handleRequestReview(milestoneId: string, notes?: string) {
@@ -279,25 +207,9 @@ export function EscrowDetailView({ escrowId }: { escrowId: string }) {
         <aside className="grid h-fit gap-6">
           <AgentReviewPanel escrow={escrow} />
           <PayoutTimeline escrow={escrow} />
-          <DisputePanel dispute={dispute} />
+          <DisputePanel dispute={escrow.dispute} />
         </aside>
       </section>
     </PageShell>
   );
-}
-
-function deriveEscrowStatus(fundingStatus: FundingStatus, milestones: Milestone[]): Escrow["status"] {
-  if (fundingStatus === "unfunded") {
-    return "pending";
-  }
-
-  if (milestones.every((milestone) => milestone.status === "paid")) {
-    return "released";
-  }
-
-  if (milestones.some((milestone) => milestone.status === "submitted")) {
-    return "review";
-  }
-
-  return "in_progress";
 }

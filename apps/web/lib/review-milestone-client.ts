@@ -2,7 +2,7 @@ export type ReviewVerdict = "approve" | "needs_review" | "reject";
 
 export type RecommendedAction = "release" | "request_more_info" | "dispute_review";
 
-export type ReleaseExecutionStatus = "mocked" | "queued" | "submitted" | "confirmed" | "failed";
+export type ReleaseExecutionStatus = "queued" | "submitted" | "confirmed" | "failed";
 
 export type MilestoneReviewRequest = {
   escrow: {

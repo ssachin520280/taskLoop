@@ -1,13 +1,12 @@
 "use client";
 
-import { useState } from "react";
 import { escrowFactoryAbi, type CreateEscrowFormInput } from "@taskloop/shared";
+import { useState } from "react";
 import { decodeEventLog, type Hex } from "viem";
 import { usePublicClient, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
 import { useToast } from "@/components/toast-provider";
 import { contractAddresses } from "@/lib/contracts/config";
 import {
-  mockCreateEscrowAdapter,
   toCreateEscrowContractDraft,
   type CreateEscrowResult
 } from "@/lib/contracts/create-escrow-adapter";
@@ -37,14 +36,12 @@ export function useCreateEscrow(): UseCreateEscrowResult {
 
     try {
       const draft = toCreateEscrowContractDraft(form);
-      const result = contractAddresses.escrowFactory
-        ? await writeCreateEscrow(draft.freelancer, draft.milestones)
-        : await mockCreateEscrowAdapter.createEscrow(draft);
+      const result = await writeCreateEscrow(draft.freelancer, draft.milestones);
 
       setState({ isSubmitting: false, result });
       toast({
-        title: contractAddresses.escrowFactory ? "Escrow transaction sent" : "Mock escrow created",
-        description: contractAddresses.escrowFactory ? result.txHash : "No factory address configured, using demo mode.",
+        title: "Escrow transaction sent",
+        description: result.txHash,
         tone: "success"
       });
       return result;
@@ -84,8 +81,12 @@ export function useCreateEscrow(): UseCreateEscrowResult {
     });
 
     setTransactionHash(hash);
-    const receipt = publicClient ? await publicClient.waitForTransactionReceipt({ hash }) : undefined;
-    const escrowAddress = receipt ? readEscrowAddressFromReceipt(receipt.logs) : readEscrowAddressFromHashFallback(hash);
+    if (!publicClient) {
+      throw new Error("A public client is required to read the escrow creation receipt");
+    }
+
+    const receipt = await publicClient.waitForTransactionReceipt({ hash });
+    const escrowAddress = readEscrowAddressFromReceipt(receipt.logs);
 
     return {
       escrowId: escrowAddress,
@@ -116,7 +117,3 @@ function readEscrowAddressFromReceipt(logs: Array<{ topics: readonly Hex[]; data
   throw new Error("EscrowCreated event was not found in the transaction receipt");
 }
 
-function readEscrowAddressFromHashFallback(hash: Hex): `0x${string}` {
-  // The transaction receipt parser in the detail flow can replace this after confirmation.
-  return `0x${hash.slice(-40)}`;
-}

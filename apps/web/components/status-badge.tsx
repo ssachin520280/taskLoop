@@ -1,5 +1,5 @@
 import { Badge, type BadgeTone } from "@/components/ui/badge";
-import type { EscrowStatus, MilestoneStatus } from "@/lib/mock-data";
+import type { EscrowStatus, MilestoneStatus } from "@/lib/escrow";
 
 const statusTone: Record<EscrowStatus | MilestoneStatus, BadgeTone> = {
   active: "yellow",

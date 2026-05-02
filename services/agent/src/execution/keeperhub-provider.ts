@@ -1,5 +1,4 @@
 import { buildExplorerUrl } from "./explorer";
-import { MockExecutionProvider } from "./mock-provider";
 import type { ExecutionProvider, ExecutionStatus, MilestoneExecutionResult, MilestoneReleaseInput } from "./types";
 
 export type KeeperHubConfig = {
@@ -19,18 +18,22 @@ type KeeperHubResponse = {
 export class KeeperHubExecutionProvider implements ExecutionProvider {
   readonly name = "keeperhub";
   private readonly config: KeeperHubConfig;
-  private readonly fallback: ExecutionProvider;
 
-  constructor(config: KeeperHubConfig = readKeeperHubConfig(), fallback: ExecutionProvider = new MockExecutionProvider()) {
+  constructor(config: KeeperHubConfig = readKeeperHubConfig()) {
     this.config = config;
-    this.fallback = fallback;
   }
 
   async executeMilestoneRelease(input: MilestoneReleaseInput): Promise<MilestoneExecutionResult> {
     const { apiUrl, apiKey, workflowId } = this.config;
 
     if (!apiUrl || !apiKey) {
-      return this.fallback.executeMilestoneRelease(input);
+      return {
+        status: "failed",
+        provider: this.name,
+        rawResponse: {
+          error: "KEEPERHUB_API_URL and KEEPERHUB_API_KEY are required for release execution."
+        }
+      };
     }
 
     const response = await fetch(apiUrl, {

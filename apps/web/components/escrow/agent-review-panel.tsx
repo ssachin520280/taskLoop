@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import type { Escrow } from "@/lib/mock-data";
+import type { Escrow } from "@/lib/escrow";
 
 export function AgentReviewPanel({ escrow }: { escrow: Escrow }) {
   const review = escrow.agentReview;
@@ -10,7 +10,7 @@ export function AgentReviewPanel({ escrow }: { escrow: Escrow }) {
     <Card>
       <CardHeader>
         <h2 className="text-lg font-black text-[var(--ink)]">Agent review</h2>
-        <p className="mt-1 text-sm text-[var(--muted)]">Mock evaluator output for the hackathon demo.</p>
+        <p className="mt-1 text-sm text-[var(--muted)]">Agent review output persisted through the review pipeline.</p>
       </CardHeader>
       <CardContent>
         <div className={`inline-flex rounded-full px-4 py-2 text-sm font-black ${tone}`}>{confidence}% confidence</div>

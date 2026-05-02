@@ -3,8 +3,8 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { StatusBadge } from "@/components/status-badge";
-import type { Escrow, FundingStatus } from "@/lib/mock-data";
-import { escrowTotal, formatEth } from "@/lib/mock-data";
+import type { Escrow, FundingStatus } from "@/lib/escrow";
+import { escrowTotal, formatEth } from "@/lib/escrow";
 
 const fundingCopy: Record<FundingStatus, string> = {
   completed: "All milestones have been paid out.",

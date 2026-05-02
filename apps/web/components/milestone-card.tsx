@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/status-badge";
-import { formatEth, type Milestone } from "@/lib/mock-data";
+import { formatEth, type Milestone } from "@/lib/escrow";
 
 export function MilestoneCard({ milestone, index }: { milestone: Milestone; index: number }) {
   return (
