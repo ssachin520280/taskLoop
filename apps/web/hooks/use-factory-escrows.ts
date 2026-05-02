@@ -7,7 +7,17 @@ import { useAccount, useReadContract, useReadContracts } from "wagmi";
 import type { Escrow, EscrowStatus, FundingStatus, Milestone, MilestoneStatus, UserRole } from "@/lib/escrow";
 import { contractAddresses } from "@/lib/contracts/config";
 
-type ChainMilestone = readonly [string, bigint, string, number, bigint, bigint, bigint];
+type ChainMilestoneTuple = readonly [string, bigint, string, number, bigint, bigint, bigint];
+type ChainMilestoneObject = {
+  title: string;
+  amount: bigint;
+  evidence: string;
+  status: number;
+  submittedAt: bigint;
+  approvedAt: bigint;
+  releasedAt: bigint;
+};
+type ChainMilestone = ChainMilestoneTuple | ChainMilestoneObject;
 
 type FactoryEscrowRecord = {
   escrow: Address;
@@ -258,7 +268,7 @@ function formatOnchainMilestoneCount(count: bigint): string {
 }
 
 function mapChainMilestone(milestone: ChainMilestone, index: number): Milestone {
-  const [title, amountWei, evidence, status, submittedAt] = milestone;
+  const { title, amountWei, evidence, status, submittedAt } = readChainMilestone(milestone);
   const hasEvidence = evidence.length > 0;
 
   return {
@@ -281,6 +291,31 @@ function mapChainMilestone(milestone: ChainMilestone, index: number): Milestone 
       : [],
     agentNote: hasEvidence ? "Evidence is available for agent review." : "Waiting for freelancer evidence."
   };
+}
+
+function readChainMilestone(milestone: ChainMilestone): {
+  title: string;
+  amountWei: bigint;
+  evidence: string;
+  status: number;
+  submittedAt: bigint;
+} {
+  if (isChainMilestoneObject(milestone)) {
+    return {
+      title: milestone.title,
+      amountWei: milestone.amount,
+      evidence: milestone.evidence,
+      status: milestone.status,
+      submittedAt: milestone.submittedAt
+    };
+  }
+
+  const [title, amountWei, evidence, status, submittedAt] = milestone;
+  return { title, amountWei, evidence, status, submittedAt };
+}
+
+function isChainMilestoneObject(milestone: ChainMilestone): milestone is ChainMilestoneObject {
+  return "title" in milestone;
 }
 
 function normalizeFactoryRecord(record: unknown): FactoryEscrowRecord | undefined {
