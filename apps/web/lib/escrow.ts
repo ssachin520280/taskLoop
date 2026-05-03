@@ -24,10 +24,14 @@ export type AgentReviewPayload = {
   recommendedAction: "release" | "request_more_info" | "dispute_review";
   generatedAt: string;
   rootHash: string;
+  txHash?: string;
+  txUrl?: string;
   execution?: {
     status: "executed" | "skipped";
     reason: string;
     rootHash: string;
+    txHash?: string;
+    txUrl?: string;
   };
 };
 

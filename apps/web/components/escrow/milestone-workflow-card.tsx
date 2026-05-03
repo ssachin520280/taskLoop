@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { VerificationLink } from "@/components/escrow/verification-link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/status-badge";
@@ -146,17 +147,29 @@ function ReviewResult({ result }: { result: MilestoneReviewResult }) {
           </p>
         ))}
       </div>
-      <p className="mt-3 break-all text-xs font-semibold text-emerald-900">0G root: {result.rootHash}</p>
+      <VerificationLink label="Review 0G root" value={result.rootHash} />
+      <VerificationLink label="Review upload tx" value={result.txHash} href={result.txUrl} />
       <div className="mt-3 rounded-xl bg-white/70 p-3">
         <p className="text-xs font-black uppercase tracking-[0.14em] text-emerald-900">Release execution</p>
         <p className="mt-1 text-xs leading-5 text-emerald-800">{result.execution.reason}</p>
-        <p className="mt-2 break-all text-xs font-semibold text-emerald-900">
-          Execution log root: {result.execution.rootHash}
-        </p>
+        <VerificationLink label="Execution log root" value={result.execution.rootHash} />
+        <VerificationLink label="Execution log upload tx" value={result.execution.txHash} href={result.execution.txUrl} />
         {result.execution.execution ? (
           <p className="mt-1 text-xs text-emerald-800">
             {result.execution.execution.provider} - {result.execution.execution.status}
-            {result.execution.execution.txHash ? ` - ${result.execution.execution.txHash}` : ""}
+            {result.execution.execution.txHash ? " - " : ""}
+            {result.execution.execution.txHash && result.execution.execution.explorerUrl ? (
+              <a
+                className="break-all font-semibold underline decoration-emerald-600 underline-offset-2"
+                href={result.execution.execution.explorerUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {result.execution.execution.txHash}
+              </a>
+            ) : (
+              result.execution.execution.txHash
+            )}
           </p>
         ) : null}
       </div>

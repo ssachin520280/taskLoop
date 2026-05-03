@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { VerificationLink } from "@/components/escrow/verification-link";
 import type { Escrow } from "@/lib/escrow";
 
 export function AgentReviewPanel({ escrow }: { escrow: Escrow }) {
@@ -27,11 +28,19 @@ export function AgentReviewPanel({ escrow }: { escrow: Escrow }) {
                 </p>
               ))}
             </div>
-            <p className="mt-3 break-all text-xs font-semibold text-emerald-900">0G root: {review.rootHash}</p>
+            <VerificationLink label="0G root" value={review.rootHash} />
+            {review.txHash ? <VerificationLink label="Upload tx" value={review.txHash} href={review.txUrl} /> : null}
             {review.execution ? (
-              <p className="mt-2 break-all text-xs font-semibold text-emerald-900">
-                Execution log: {review.execution.rootHash}
-              </p>
+              <>
+                <VerificationLink label="Execution log" value={review.execution.rootHash} />
+                {review.execution.txHash ? (
+                  <VerificationLink
+                    label="Execution upload tx"
+                    value={review.execution.txHash}
+                    href={review.execution.txUrl}
+                  />
+                ) : null}
+              </>
             ) : null}
           </div>
         ) : null}
@@ -47,3 +56,4 @@ export function AgentReviewPanel({ escrow }: { escrow: Escrow }) {
     </Card>
   );
 }
+

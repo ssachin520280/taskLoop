@@ -118,7 +118,7 @@ export function EscrowDetailView({ escrowId }: { escrowId: string }) {
       });
 
       setReviewResults((current) => ({ ...current, [milestoneId]: result }));
-      toast({ title: "Agent review stored", description: `0G root: ${result.rootHash}`, tone: "success" });
+      toast({ title: "Agent review stored", description: `Verify tx: ${result.txHash}`, tone: "success" });
     } catch (error) {
       toast({
         title: "Agent review failed",
