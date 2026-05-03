@@ -116,7 +116,8 @@ async function persistExecutionLog(
     reason,
     execution,
     rootHash: storedLog.rootHash,
-    txHash: storedLog.txHash
+    txHash: storedLog.txHash,
+    txUrl: storedLog.txUrl
   };
 }
 

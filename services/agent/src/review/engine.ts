@@ -23,7 +23,8 @@ export async function reviewMilestoneEvidence(
   return {
     review,
     rootHash: stored.rootHash,
-    txHash: stored.txHash
+    txHash: stored.txHash,
+    txUrl: stored.txUrl
   };
 }
 

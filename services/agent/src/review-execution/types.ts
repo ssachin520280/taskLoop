@@ -15,7 +15,8 @@ export type ReviewExecutionDecision = {
   reason: string;
   execution?: MilestoneExecutionResult;
   rootHash: string;
-  txHash?: string;
+  txHash: string;
+  txUrl: string;
 };
 
 export type ReviewExecutionResponse = StoredMilestoneReview & {

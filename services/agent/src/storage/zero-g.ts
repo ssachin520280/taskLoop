@@ -1,8 +1,7 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { Indexer, ZgFile } from "@0gfoundation/0g-ts-sdk";
+import { Indexer, MemData } from "@0gfoundation/0g-storage-ts-sdk";
 import { JsonRpcProvider, Wallet } from "ethers";
+
+const ZERO_G_GALILEO_TX_BASE_URL = "https://chainscan-galileo.0g.ai/tx";
 
 export type ZeroGStorageConfig = {
   rpcUrl: string;
@@ -17,6 +16,7 @@ export type ZeroGUploadResult = {
   kind: ZeroGUploadKind;
   rootHash: string;
   txHash: string;
+  txUrl: string;
   txSeq?: number;
   contentType: string;
   uploadedAt: string;
@@ -41,11 +41,17 @@ type SingleUploadResponse = {
   txSeq?: number;
 };
 
-type UploadEnvelope<T> = {
+export type UploadEnvelope<T> = {
   name: string;
   contentType: string;
   createdAt: string;
   data: T;
+};
+
+export type ZeroGProofDownloadResult<T> = {
+  rootHash: string;
+  envelope: UploadEnvelope<T>;
+  downloadedAt: string;
 };
 
 type ZeroGClients = {
@@ -111,6 +117,27 @@ export async function getFileMetadata(rootHash: string): Promise<ZeroGFileMetada
   }
 }
 
+export async function downloadJsonWithProof<T = unknown>(rootHash: string): Promise<ZeroGProofDownloadResult<T>> {
+  const { indexer } = createZeroGClients();
+
+  try {
+    const [blob, err] = await indexer.downloadToBlob(rootHash, { proof: true });
+    if (err) {
+      throw err;
+    }
+
+    const envelope = JSON.parse(await blob.text()) as UploadEnvelope<T>;
+
+    return {
+      rootHash,
+      envelope,
+      downloadedAt: new Date().toISOString()
+    };
+  } catch (error) {
+    throw new ZeroGStorageError(`Unable to download 0G JSON with proof for ${rootHash}`, { cause: error });
+  }
+}
+
 async function uploadBuffer(
   name: string,
   content: string,
@@ -118,13 +145,10 @@ async function uploadBuffer(
   contentType: string
 ): Promise<ZeroGUploadResult> {
   const { config, indexer, signer } = createZeroGClients();
-  const tempDir = await mkdtemp(join(tmpdir(), "taskloop-0g-"));
-  const filePath = join(tempDir, `${safeFileName(name)}.${kind === "json" ? "json" : "txt"}`);
-  let file: ZgFile | undefined;
 
   try {
-    await writeFile(filePath, content, "utf8");
-    file = await ZgFile.fromFilePath(filePath);
+    const data = new TextEncoder().encode(content);
+    const file = new MemData(data);
 
     const [tree, treeError] = await file.merkleTree();
     if (treeError) {
@@ -142,24 +166,20 @@ async function uploadBuffer(
     }
 
     const singleUpload = parseSingleUploadResponse(uploadResponse);
+    verifyUploadRootHash(rootHash, singleUpload.rootHash);
 
     return {
       name,
       kind,
-      rootHash: singleUpload.rootHash || rootHash,
+      rootHash: singleUpload.rootHash,
       txHash: singleUpload.txHash,
+      txUrl: buildZeroGTransactionUrl(singleUpload.txHash),
       txSeq: singleUpload.txSeq,
       contentType,
       uploadedAt: new Date().toISOString()
     };
   } catch (error) {
     throw new ZeroGStorageError(`Unable to upload ${name} to 0G Storage`, { cause: error });
-  } finally {
-    try {
-      await file?.close();
-    } finally {
-      await rm(tempDir, { recursive: true, force: true });
-    }
   }
 }
 
@@ -203,21 +223,32 @@ function parseSingleUploadResponse(response: unknown): SingleUploadResponse {
   throw new ZeroGStorageError("Fragmented 0G uploads are not supported by TaskLoop yet");
 }
 
+function verifyUploadRootHash(expectedRootHash: string, uploadedRootHash: string): void {
+  if (uploadedRootHash !== expectedRootHash) {
+    throw new ZeroGStorageError(
+      `0G upload root hash mismatch: expected ${expectedRootHash}, received ${uploadedRootHash}`
+    );
+  }
+}
+
 function isSingleUploadResponse(value: unknown): value is SingleUploadResponse {
   return (
     typeof value === "object" &&
     value !== null &&
     "rootHash" in value &&
     "txHash" in value &&
-    typeof value.rootHash === "string" &&
-    typeof value.txHash === "string" &&
+    isNonEmptyString(value.rootHash) &&
+    isNonEmptyString(value.txHash) &&
     (!("txSeq" in value) || typeof value.txSeq === "number")
   );
 }
 
-function safeFileName(name: string): string {
-  const safeName = name.trim().replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "");
-  return safeName || "taskloop-artifact";
+function buildZeroGTransactionUrl(txHash: string): string {
+  return `${ZERO_G_GALILEO_TX_BASE_URL}/${txHash}`;
+}
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
 }
 
 function readUnknownString(value: unknown, key: string): string | undefined {

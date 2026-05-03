@@ -41,7 +41,8 @@ export type MilestoneReviewResult = {
     generatedAt: string;
   };
   rootHash: string;
-  txHash?: string;
+  txHash: string;
+  txUrl: string;
   execution: {
     status: "executed" | "skipped";
     threshold: number;
@@ -54,7 +55,8 @@ export type MilestoneReviewResult = {
       rawResponse: unknown;
     };
     rootHash: string;
-    txHash?: string;
+    txHash: string;
+    txUrl: string;
   };
 };
 

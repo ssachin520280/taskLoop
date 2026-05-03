@@ -93,7 +93,7 @@ importers:
 
   services/agent:
     dependencies:
-      '@0gfoundation/0g-ts-sdk':
+      '@0gfoundation/0g-storage-ts-sdk':
         specifier: ^1.2.8
         version: 1.2.8(bufferutil@4.1.0)(ethers@6.13.1(bufferutil@4.1.0)(utf-8-validate@5.0.10))(utf-8-validate@5.0.10)
       '@taskloop/shared':
@@ -118,9 +118,8 @@ importers:
 
 packages:
 
-  '@0gfoundation/0g-ts-sdk@1.2.8':
-    resolution: {integrity: sha512-JuPwdo1gugDWgCD+45y71xxGdjNaO5BIG0kRMas8JqWvRJHvK63pHy5m3cbIm+5CLB/vmMaEBbvVWVETcsRhNg==}
-    deprecated: This package has moved. Please use @0gfoundation/0g-storage-ts-sdk instead.
+  '@0gfoundation/0g-storage-ts-sdk@1.2.8':
+    resolution: {integrity: sha512-MpUAgCd96Sv769GKD0qTZtOSnOeEHERgyaCn+x+KMAgf4oKqSNrxPGEDGLxihrP3vV+Hz/xhRggmQnwBi64iLA==}
     peerDependencies:
       ethers: 6.13.1
 
@@ -3873,7 +3872,7 @@ packages:
 
 snapshots:
 
-  '@0gfoundation/0g-ts-sdk@1.2.8(bufferutil@4.1.0)(ethers@6.13.1(bufferutil@4.1.0)(utf-8-validate@5.0.10))(utf-8-validate@5.0.10)':
+  '@0gfoundation/0g-storage-ts-sdk@1.2.8(bufferutil@4.1.0)(ethers@6.13.1(bufferutil@4.1.0)(utf-8-validate@5.0.10))(utf-8-validate@5.0.10)':
     dependencies:
       '@ethersproject/bytes': 5.8.0
       '@ethersproject/keccak256': 5.8.0

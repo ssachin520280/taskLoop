@@ -37,7 +37,8 @@ export type MilestoneReview = {
 export type StoredMilestoneReview = {
   review: MilestoneReview;
   rootHash: string;
-  txHash?: string;
+  txHash: string;
+  txUrl: string;
 };
 
 export type AgentReviewProvider = {
