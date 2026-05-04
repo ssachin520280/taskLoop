@@ -64,6 +64,7 @@ export function MilestoneWorkflowCard({
         </div>
 
         <EvidenceList evidence={milestone.evidence} />
+        <StoredRootList milestone={milestone} />
         {review ? <ReviewResult result={review} /> : null}
 
         <div className="grid gap-3 rounded-2xl border border-dashed border-stone-300 bg-white/70 p-4">
@@ -173,6 +174,22 @@ function ReviewResult({ result }: { result: MilestoneReviewResult }) {
           </p>
         ) : null}
       </div>
+    </div>
+  );
+}
+
+function StoredRootList({ milestone }: { milestone: Milestone }) {
+  if (!milestone.reviewRootHash && !milestone.executionRootHash) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+      <p className="text-xs font-black uppercase tracking-[0.14em] text-blue-900">On-chain 0G pointers</p>
+      {milestone.reviewRootHash ? <VerificationLink label="Stored review root" value={milestone.reviewRootHash} /> : null}
+      {milestone.executionRootHash ? (
+        <VerificationLink label="Stored execution root" value={milestone.executionRootHash} />
+      ) : null}
     </div>
   );
 }

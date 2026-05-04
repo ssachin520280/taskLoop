@@ -29,6 +29,8 @@ contract MilestoneEscrow {
         string title;
         uint256 amount;
         string evidence;
+        string reviewRootHash;
+        string executionRootHash;
         MilestoneStatus status;
         uint64 submittedAt;
         uint64 approvedAt;
@@ -48,6 +50,7 @@ contract MilestoneEscrow {
     error InvalidMilestone(uint256 milestoneId);
     error InvalidMilestoneStatus(MilestoneStatus status);
     error EmptyEvidence();
+    error EmptyReviewRoot();
     error TransferFailed();
     error Reentrancy();
     error UseFundFunction();
@@ -56,6 +59,11 @@ contract MilestoneEscrow {
     event EvidenceSubmitted(uint256 indexed milestoneId, address indexed freelancer, string evidence);
     event MilestoneApproved(uint256 indexed milestoneId, address indexed client);
     event MilestoneReleased(uint256 indexed milestoneId, address indexed freelancer, uint256 amount);
+    event MilestoneReviewRootsAttached(
+        uint256 indexed milestoneId,
+        string reviewRootHash,
+        string executionRootHash
+    );
     event MilestoneDisputed(uint256 indexed milestoneId, address indexed reporter, string reason);
     event MilestoneDisputeResolved(uint256 indexed milestoneId, address indexed client);
     event EscrowCancelled(address indexed client, uint256 refundAmount);
@@ -128,6 +136,8 @@ contract MilestoneEscrow {
                     title: input.title,
                     amount: input.amount,
                     evidence: "",
+                    reviewRootHash: "",
+                    executionRootHash: "",
                     status: MilestoneStatus.Pending,
                     submittedAt: 0,
                     approvedAt: 0,
@@ -186,6 +196,24 @@ contract MilestoneEscrow {
         emit MilestoneApproved(milestoneId, msg.sender);
 
         _releaseMilestone(milestoneId, milestone);
+    }
+
+    /// @notice Stores 0G root hashes that point to the agent review and execution log.
+    /// @param milestoneId Index of the milestone.
+    /// @param reviewRootHash 0G root hash for the milestone review artifact.
+    /// @param executionRootHash 0G root hash for the execution decision artifact.
+    function attachReviewRoots(
+        uint256 milestoneId,
+        string calldata reviewRootHash,
+        string calldata executionRootHash
+    ) external onlyClient validMilestone(milestoneId) {
+        if (bytes(reviewRootHash).length == 0 || bytes(executionRootHash).length == 0) revert EmptyReviewRoot();
+
+        Milestone storage milestone = milestones[milestoneId];
+        milestone.reviewRootHash = reviewRootHash;
+        milestone.executionRootHash = executionRootHash;
+
+        emit MilestoneReviewRootsAttached(milestoneId, reviewRootHash, executionRootHash);
     }
 
     /// @notice Flags a milestone for dispute. Either participant can raise it before release.

@@ -7,11 +7,13 @@ import { useAccount, useReadContract, useReadContracts } from "wagmi";
 import type { Escrow, EscrowStatus, FundingStatus, Milestone, MilestoneStatus, UserRole } from "@/lib/escrow";
 import { contractAddresses } from "@/lib/contracts/config";
 
-type ChainMilestoneTuple = readonly [string, bigint, string, number, bigint, bigint, bigint];
+type ChainMilestoneTuple = readonly [string, bigint, string, string, string, number, bigint, bigint, bigint];
 type ChainMilestoneObject = {
   title: string;
   amount: bigint;
   evidence: string;
+  reviewRootHash: string;
+  executionRootHash: string;
   status: number;
   submittedAt: bigint;
   approvedAt: bigint;
@@ -234,7 +236,7 @@ function mapFactoryRecordToEscrow({
     createdAt: formatChainDate(record.createdAt),
     agentScore: 0,
     agentRecommendation: "Agent review will run after evidence submission.",
-    chain: "Sepolia",
+    chain: "0G Galileo",
     milestones: visibleMilestones,
     evidence: visibleMilestones.flatMap((milestone) => milestone.evidence)
   };
@@ -268,7 +270,7 @@ function formatOnchainMilestoneCount(count: bigint): string {
 }
 
 function mapChainMilestone(milestone: ChainMilestone, index: number): Milestone {
-  const { title, amountWei, evidence, status, submittedAt } = readChainMilestone(milestone);
+  const { title, amountWei, evidence, reviewRootHash, executionRootHash, status, submittedAt } = readChainMilestone(milestone);
   const hasEvidence = evidence.length > 0;
 
   return {
@@ -289,7 +291,9 @@ function mapChainMilestone(milestone: ChainMilestone, index: number): Milestone 
           }
         ]
       : [],
-    agentNote: hasEvidence ? "Evidence is available for agent review." : "Waiting for freelancer evidence."
+    agentNote: hasEvidence ? "Evidence is available for agent review." : "Waiting for freelancer evidence.",
+    reviewRootHash,
+    executionRootHash
   };
 }
 
@@ -297,6 +301,8 @@ function readChainMilestone(milestone: ChainMilestone): {
   title: string;
   amountWei: bigint;
   evidence: string;
+  reviewRootHash: string;
+  executionRootHash: string;
   status: number;
   submittedAt: bigint;
 } {
@@ -305,13 +311,15 @@ function readChainMilestone(milestone: ChainMilestone): {
       title: milestone.title,
       amountWei: milestone.amount,
       evidence: milestone.evidence,
+      reviewRootHash: milestone.reviewRootHash,
+      executionRootHash: milestone.executionRootHash,
       status: milestone.status,
       submittedAt: milestone.submittedAt
     };
   }
 
-  const [title, amountWei, evidence, status, submittedAt] = milestone;
-  return { title, amountWei, evidence, status, submittedAt };
+  const [title, amountWei, evidence, reviewRootHash, executionRootHash, status, submittedAt] = milestone;
+  return { title, amountWei, evidence, reviewRootHash, executionRootHash, status, submittedAt };
 }
 
 function isChainMilestoneObject(milestone: ChainMilestone): milestone is ChainMilestoneObject {

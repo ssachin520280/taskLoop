@@ -51,6 +51,29 @@ export const milestoneEscrowAbi = [
   },
   {
     "type": "function",
+    "name": "attachReviewRoots",
+    "inputs": [
+      {
+        "name": "milestoneId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "reviewRootHash",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "executionRootHash",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "cancel",
     "inputs": [],
     "outputs": [],
@@ -139,6 +162,16 @@ export const milestoneEscrowAbi = [
             "internalType": "string"
           },
           {
+            "name": "reviewRootHash",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "executionRootHash",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
             "name": "status",
             "type": "uint8",
             "internalType": "enum MilestoneEscrow.MilestoneStatus"
@@ -185,6 +218,16 @@ export const milestoneEscrowAbi = [
           },
           {
             "name": "evidence",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "reviewRootHash",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "executionRootHash",
             "type": "string",
             "internalType": "string"
           },
@@ -438,6 +481,31 @@ export const milestoneEscrowAbi = [
   },
   {
     "type": "event",
+    "name": "MilestoneReviewRootsAttached",
+    "inputs": [
+      {
+        "name": "milestoneId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "reviewRootHash",
+        "type": "string",
+        "indexed": false,
+        "internalType": "string"
+      },
+      {
+        "name": "executionRootHash",
+        "type": "string",
+        "indexed": false,
+        "internalType": "string"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "MilestoneDisputed",
     "inputs": [
       {
@@ -489,6 +557,11 @@ export const milestoneEscrowAbi = [
   {
     "type": "error",
     "name": "EmptyEvidence",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "EmptyReviewRoot",
     "inputs": []
   },
   {

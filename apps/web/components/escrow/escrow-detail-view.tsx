@@ -119,6 +119,16 @@ export function EscrowDetailView({ escrowId }: { escrowId: string }) {
 
       setReviewResults((current) => ({ ...current, [milestoneId]: result }));
       toast({ title: "Agent review stored", description: `Verify tx: ${result.txHash}`, tone: "success" });
+
+      try {
+        await contract.actions.attachReviewRoots(milestoneId, result.rootHash, result.execution.rootHash);
+      } catch (attachError) {
+        toast({
+          title: "0G roots not attached on-chain",
+          description: attachError instanceof Error ? attachError.message : "The review was stored, but the chain pointer was not updated.",
+          tone: "error"
+        });
+      }
     } catch (error) {
       toast({
         title: "Agent review failed",

@@ -23,6 +23,15 @@ contract ClientActor {
         escrow.approveMilestone(milestoneId);
     }
 
+    function attachReviewRoots(
+        MilestoneEscrow escrow,
+        uint256 milestoneId,
+        string calldata reviewRootHash,
+        string calldata executionRootHash
+    ) external {
+        escrow.attachReviewRoots(milestoneId, reviewRootHash, executionRootHash);
+    }
+
     function dispute(MilestoneEscrow escrow, uint256 milestoneId, string calldata reason) external {
         escrow.disputeMilestone(milestoneId, reason);
     }
@@ -88,6 +97,30 @@ contract MilestoneEscrowTest {
         require(uint256(milestone.status) == uint256(MilestoneEscrow.MilestoneStatus.EvidenceSubmitted), "status");
         require(_sameString(milestone.evidence, "ipfs://evidence-1"), "evidence");
         require(milestone.submittedAt > 0, "submitted at");
+    }
+
+    function testAttachReviewRoots() public {
+        MilestoneEscrow escrow = _createFundedEscrow();
+
+        freelancer.submitEvidence(escrow, 0, "ipfs://evidence-1");
+        client.attachReviewRoots(escrow, 0, "0xreviewroot", "0xexecutionroot");
+        MilestoneEscrow.Milestone memory milestone = escrow.getMilestone(0);
+
+        require(_sameString(milestone.reviewRootHash, "0xreviewroot"), "review root");
+        require(_sameString(milestone.executionRootHash, "0xexecutionroot"), "execution root");
+    }
+
+    function testAttachReviewRootsRejectsEmptyRoot() public {
+        MilestoneEscrow escrow = _createFundedEscrow();
+        bool reverted;
+
+        try client.attachReviewRoots(escrow, 0, "", "0xexecutionroot") {
+            reverted = false;
+        } catch {
+            reverted = true;
+        }
+
+        require(reverted, "empty root accepted");
     }
 
     function testApproveAndReleaseMilestone() public {

@@ -44,6 +44,8 @@ export type Milestone = {
   evidenceCount: number;
   evidence: EvidenceItem[];
   agentNote: string;
+  reviewRootHash?: string;
+  executionRootHash?: string;
 };
 
 export type Escrow = {
@@ -75,7 +77,7 @@ export type Escrow = {
 };
 
 export function formatEth(amountWei: bigint): string {
-  return `${Number(formatEther(amountWei)).toFixed(2)} ETH`;
+  return `${Number(formatEther(amountWei)).toFixed(2)} 0G`;
 }
 
 export function escrowTotal(escrow: Escrow): bigint {
