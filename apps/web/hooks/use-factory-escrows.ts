@@ -226,6 +226,7 @@ function mapFactoryRecordToEscrow({
 }): Escrow {
   const visibleMilestones = getVisibleMilestones(record, milestones);
   const milestoneLabel = formatMilestoneCount(record.milestoneCount);
+  const viewerRole = sameAddress(record.freelancer, accountAddress) ? "freelancer" : sameAddress(record.client, accountAddress) ? "client" : undefined;
 
   return {
     id: record.escrow,
@@ -236,7 +237,8 @@ function mapFactoryRecordToEscrow({
     clientWallet: record.client,
     freelancer: sameAddress(record.freelancer, accountAddress) ? "You" : "Freelancer wallet",
     freelancerWallet: record.freelancer,
-    role: sameAddress(record.freelancer, accountAddress) ? "freelancer" : ("client" satisfies UserRole),
+    role: viewerRole ?? ("client" satisfies UserRole),
+    viewerRole,
     status: escrowStatusLabels[status] ?? "pending",
     fundingStatus: mapFundingStatus(status, record.totalAmount, releasedAmount),
     dueDate: "Onchain",

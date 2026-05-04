@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { StatusBadge } from "@/components/status-badge";
-import type { Escrow, FundingStatus } from "@/lib/escrow";
+import type { Escrow, FundingStatus, UserRole } from "@/lib/escrow";
 import { escrowTotal, formatEth } from "@/lib/escrow";
 
 const fundingCopy: Record<FundingStatus, string> = {
@@ -16,13 +16,15 @@ const fundingCopy: Record<FundingStatus, string> = {
 export function FundingPanel({
   escrow,
   fundingStatus,
+  viewerRole,
   onFund
 }: {
   escrow: Escrow;
   fundingStatus: FundingStatus;
+  viewerRole?: UserRole;
   onFund: () => void;
 }) {
-  const canFund = fundingStatus === "unfunded";
+  const canFund = viewerRole === "client" && fundingStatus === "unfunded";
 
   return (
     <Card className="bg-[#fff7df]">
@@ -43,9 +45,11 @@ export function FundingPanel({
             Chain: {escrow.chain} - Created {escrow.createdAt}
           </p>
         </div>
-        <Button type="button" disabled={!canFund} onClick={onFund}>
-          {canFund ? "Fund escrow" : "Funded"}
-        </Button>
+        {viewerRole === "client" ? (
+          <Button type="button" disabled={!canFund} onClick={onFund}>
+            {canFund ? "Fund escrow" : "Funded"}
+          </Button>
+        ) : null}
       </CardContent>
     </Card>
   );

@@ -179,7 +179,7 @@ export function EscrowDetailView({ escrowId }: { escrowId: string }) {
 
       <section className="grid gap-6 lg:grid-cols-[1fr_24rem]">
         <div className="grid gap-6">
-          <FundingPanel escrow={escrow} fundingStatus={visibleFundingStatus} onFund={handleFund} />
+          <FundingPanel escrow={escrow} fundingStatus={visibleFundingStatus} viewerRole={escrow.viewerRole} onFund={handleFund} />
           {contract.pendingAction ? (
             <LoadingState label={`${contract.pendingAction} pending wallet confirmation...`} />
           ) : null}
@@ -203,6 +203,7 @@ export function EscrowDetailView({ escrowId }: { escrowId: string }) {
                 milestone={milestone}
                 index={index}
                 review={reviewResults[milestone.id]}
+                viewerRole={escrow.viewerRole}
                 isReviewing={reviewingMilestoneId === milestone.id}
                 onSubmitEvidence={handleSubmitEvidence}
                 onApprove={handleApprove}

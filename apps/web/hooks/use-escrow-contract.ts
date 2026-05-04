@@ -6,7 +6,7 @@ import { isAddress, type Hex } from "viem";
 import { useAccount, usePublicClient, useReadContracts, useSwitchChain, useWriteContract } from "wagmi";
 import { useToast } from "@/components/toast-provider";
 import { taskloopChainId } from "@/lib/chains";
-import type { Escrow, FundingStatus, Milestone, MilestoneStatus } from "@/lib/escrow";
+import type { Escrow, FundingStatus, Milestone, MilestoneStatus, UserRole } from "@/lib/escrow";
 import { escrowTotal } from "@/lib/escrow";
 
 type ChainMilestoneTuple = readonly [string, bigint, string, string, string, number, bigint, bigint, bigint];
@@ -44,7 +44,7 @@ const milestoneStatusLabels: MilestoneStatus[] = ["pending", "submitted", "appro
 
 export function useEscrowContract(escrowId: string): EscrowContractState {
   const address = isAddress(escrowId) ? escrowId : undefined;
-  const { chainId } = useAccount();
+  const { address: accountAddress, chainId } = useAccount();
   const publicClient = usePublicClient({ chainId: taskloopChainId });
   const { switchChainAsync } = useSwitchChain();
   const { writeContractAsync } = useWriteContract();
@@ -89,6 +89,7 @@ export function useEscrowContract(escrowId: string): EscrowContractState {
     ];
     const mappedMilestones = (milestones as ChainMilestone[]).map(mapChainMilestone);
     const fundingStatus = mapFundingStatus(Number(status), totalAmount, releasedAmount);
+    const viewerRole = getViewerRole(accountAddress, client, freelancer);
 
     return {
       id: address,
@@ -99,7 +100,8 @@ export function useEscrowContract(escrowId: string): EscrowContractState {
       clientWallet: client,
       freelancer: "Freelancer wallet",
       freelancerWallet: freelancer,
-      role: "client",
+      role: viewerRole ?? "client",
+      viewerRole,
       status: escrowStatusLabels[Number(status)] ?? "pending",
       fundingStatus,
       dueDate: "Onchain",
@@ -110,7 +112,7 @@ export function useEscrowContract(escrowId: string): EscrowContractState {
       milestones: mappedMilestones,
       evidence: mappedMilestones.flatMap((milestone) => milestone.evidence),
     } satisfies Escrow;
-  }, [address, data]);
+  }, [accountAddress, address, data]);
   const payableAmountWei = chainEscrow ? escrowTotal(chainEscrow) : 0n;
 
   async function runWrite(label: string, request: (contractAddress: `0x${string}`) => Promise<Hex>): Promise<void> {
@@ -286,6 +288,26 @@ function mapFundingStatus(status: number, totalAmount: bigint, releasedAmount: b
   }
 
   return "funded";
+}
+
+function getViewerRole(
+  accountAddress: `0x${string}` | undefined,
+  client: `0x${string}`,
+  freelancer: `0x${string}`
+): UserRole | undefined {
+  if (sameAddress(accountAddress, client)) {
+    return "client";
+  }
+
+  if (sameAddress(accountAddress, freelancer)) {
+    return "freelancer";
+  }
+
+  return undefined;
+}
+
+function sameAddress(left: `0x${string}` | undefined, right: `0x${string}` | undefined): boolean {
+  return Boolean(left && right && left.toLowerCase() === right.toLowerCase());
 }
 
 function readMilestoneIndex(milestoneId: string): number {

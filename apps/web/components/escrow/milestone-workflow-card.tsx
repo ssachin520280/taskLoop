@@ -5,7 +5,7 @@ import { VerificationLink } from "@/components/escrow/verification-link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/status-badge";
-import type { EvidenceItem, Milestone, MilestoneStatus } from "@/lib/escrow";
+import type { EvidenceItem, Milestone, MilestoneStatus, UserRole } from "@/lib/escrow";
 import { formatEth } from "@/lib/escrow";
 import type { MilestoneReviewResult } from "@/lib/review-milestone-client";
 
@@ -13,6 +13,7 @@ export function MilestoneWorkflowCard({
   milestone,
   index,
   review,
+  viewerRole,
   isReviewing,
   onSubmitEvidence,
   onApprove,
@@ -23,6 +24,7 @@ export function MilestoneWorkflowCard({
   milestone: Milestone;
   index: number;
   review?: MilestoneReviewResult;
+  viewerRole?: UserRole;
   isReviewing?: boolean;
   onSubmitEvidence: (milestoneId: string, label: string) => void;
   onApprove: (milestoneId: string) => void;
@@ -32,11 +34,14 @@ export function MilestoneWorkflowCard({
 }) {
   const [evidenceLabel, setEvidenceLabel] = useState("");
   const [reviewNotes, setReviewNotes] = useState("");
-  const canSubmit = milestone.status === "active" || milestone.status === "pending";
-  const canApprove = milestone.status === "submitted";
-  const canRelease = milestone.status === "approved";
-  const canDispute = milestone.status === "submitted" || milestone.status === "active";
+  const isClient = viewerRole === "client";
+  const isFreelancer = viewerRole === "freelancer";
+  const canSubmit = isFreelancer && (milestone.status === "active" || milestone.status === "pending");
+  const canApprove = isClient && milestone.status === "submitted";
+  const canRelease = isClient && milestone.status === "approved";
+  const canDispute = Boolean(viewerRole) && (milestone.status === "submitted" || milestone.status === "active");
   const hasEvidence = milestone.evidence.length > 0;
+  const canRequestReview = isClient && hasEvidence;
 
   return (
     <Card className={milestone.status === "disputed" ? "border-red-200 bg-red-50/60" : undefined}>
@@ -70,31 +75,37 @@ export function MilestoneWorkflowCard({
         <div className="grid gap-3 rounded-2xl border border-dashed border-stone-300 bg-white/70 p-4">
           <textarea
             className="field-input min-h-20"
-            placeholder="Paste evidence URI, commit hash, or demo note..."
+            placeholder={isFreelancer ? "Paste evidence URI, commit hash, or demo note..." : "Only the freelancer can submit milestone evidence."}
             value={evidenceLabel}
             disabled={!canSubmit}
             onChange={(event) => setEvidenceLabel(event.target.value)}
           />
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs text-[var(--muted)]">Actions submit wallet transactions to the escrow contract.</p>
+            <p className="text-xs text-[var(--muted)]">{getActionHint(viewerRole)}</p>
             <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={!canSubmit || evidenceLabel.trim().length === 0}
-                onClick={() => {
-                  onSubmitEvidence(milestone.id, evidenceLabel);
-                  setEvidenceLabel("");
-                }}
-              >
-                Submit evidence
-              </Button>
-              <Button type="button" disabled={!canApprove} onClick={() => onApprove(milestone.id)}>
-                Approve
-              </Button>
-              <Button type="button" variant="yellow" disabled={!canRelease} onClick={() => onRelease(milestone.id)}>
-                Release
-              </Button>
+              {isFreelancer ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={!canSubmit || evidenceLabel.trim().length === 0}
+                  onClick={() => {
+                    onSubmitEvidence(milestone.id, evidenceLabel);
+                    setEvidenceLabel("");
+                  }}
+                >
+                  Submit evidence
+                </Button>
+              ) : null}
+              {isClient ? (
+                <Button type="button" disabled={!canApprove} onClick={() => onApprove(milestone.id)}>
+                  Approve & release
+                </Button>
+              ) : null}
+              {isClient && milestone.status === "approved" ? (
+                <Button type="button" variant="yellow" disabled={!canRelease} onClick={() => onRelease(milestone.id)}>
+                  Release
+                </Button>
+              ) : null}
               <Button type="button" variant="ghost" disabled={!canDispute} onClick={() => onDispute(milestone.id)}>
                 Dispute
               </Button>
@@ -118,7 +129,7 @@ export function MilestoneWorkflowCard({
           <Button
             type="button"
             variant="yellow"
-            disabled={!hasEvidence || isReviewing}
+            disabled={!canRequestReview || isReviewing}
             onClick={() => onRequestReview(milestone.id, reviewNotes)}
           >
             {isReviewing ? "Reviewing..." : "Request agent review"}
@@ -127,6 +138,18 @@ export function MilestoneWorkflowCard({
       </CardContent>
     </Card>
   );
+}
+
+function getActionHint(viewerRole: UserRole | undefined): string {
+  if (viewerRole === "freelancer") {
+    return "Freelancers can submit evidence. Client approval and release actions are hidden.";
+  }
+
+  if (viewerRole === "client") {
+    return "Clients can approve, release, dispute, and request agent review after evidence is submitted.";
+  }
+
+  return "Connect as the client or freelancer wallet to submit milestone transactions.";
 }
 
 export function nextMilestoneStatusAfterEvidence(status: MilestoneStatus): MilestoneStatus {

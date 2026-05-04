@@ -58,6 +58,7 @@ export type Escrow = {
   freelancer: string;
   freelancerWallet: `0x${string}`;
   role: UserRole;
+  viewerRole?: UserRole;
   status: EscrowStatus;
   fundingStatus: FundingStatus;
   dueDate: string;
