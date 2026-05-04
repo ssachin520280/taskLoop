@@ -1,59 +1,114 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { VerificationLink } from "@/components/escrow/verification-link";
 import type { Escrow } from "@/lib/escrow";
+import type { MilestoneReviewResult } from "@/lib/review-milestone-client";
 
-export function AgentReviewPanel({ escrow }: { escrow: Escrow }) {
-  const review = escrow.agentReview;
-  const confidence = review ? Math.round(review.confidence * 100) : escrow.agentScore;
-  const tone = confidence >= 90 ? "bg-emerald-50 text-emerald-800" : "bg-yellow-100 text-yellow-900";
+export function AgentReviewPanel({
+  escrow,
+  reviews,
+  reviewingMilestoneId
+}: {
+  escrow: Escrow;
+  reviews: Record<string, MilestoneReviewResult>;
+  reviewingMilestoneId?: string;
+}) {
+  const reviewedMilestones = escrow.milestones
+    .map((milestone) => ({ milestone, result: reviews[milestone.id] }))
+    .filter((item): item is { milestone: Escrow["milestones"][number]; result: MilestoneReviewResult } => Boolean(item.result));
+  const latestReview = reviewedMilestones.at(-1);
+  const confidence = latestReview ? Math.round(latestReview.result.review.confidence * 100) : undefined;
+  const statusLabel = reviewingMilestoneId ? "Reviewing..." : confidence === undefined ? "Waiting for review" : `${confidence}% confidence`;
+  const tone = getTone(latestReview?.result.review.verdict, Boolean(reviewingMilestoneId));
 
   return (
     <Card>
       <CardHeader>
         <h2 className="text-lg font-black text-[var(--ink)]">Agent review</h2>
-        <p className="mt-1 text-sm text-[var(--muted)]">Agent review output persisted through the review pipeline.</p>
+        <p className="mt-1 text-sm text-[var(--muted)]">
+          Review each milestone after evidence is submitted. Results are stored on 0G.
+        </p>
       </CardHeader>
       <CardContent>
-        <div className={`inline-flex rounded-full px-4 py-2 text-sm font-black ${tone}`}>{confidence}% confidence</div>
-        <p className="mt-4 text-sm leading-6 text-[var(--muted)]">{review?.summary ?? escrow.agentRecommendation}</p>
-        {review ? (
-          <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-3">
-            <p className="text-xs font-black uppercase tracking-[0.14em] text-emerald-900">
-              Seeded review: {review.verdict}
-            </p>
-            <div className="mt-2 grid gap-1">
-              {review.reasons.map((reason) => (
-                <p key={reason} className="text-xs leading-5 text-emerald-800">
-                  {reason}
-                </p>
-              ))}
-            </div>
-            <VerificationLink label="0G root" value={review.rootHash} />
-            {review.txHash ? <VerificationLink label="Upload tx" value={review.txHash} href={review.txUrl} /> : null}
-            {review.execution ? (
-              <>
-                <VerificationLink label="Execution log" value={review.execution.rootHash} />
-                {review.execution.txHash ? (
-                  <VerificationLink
-                    label="Execution upload tx"
-                    value={review.execution.txHash}
-                    href={review.execution.txUrl}
-                  />
-                ) : null}
-              </>
-            ) : null}
-          </div>
-        ) : null}
+        <div className={`inline-flex rounded-full px-4 py-2 text-sm font-black ${tone}`}>{statusLabel}</div>
+        <p className="mt-4 text-sm leading-6 text-[var(--muted)]">
+          {latestReview
+            ? latestReview.result.review.summary
+            : "Submit evidence on a milestone, then request agent review from that milestone card."}
+        </p>
         <div className="mt-5 grid gap-3">
           {escrow.milestones.map((milestone) => (
-            <div key={milestone.id} className="rounded-2xl bg-[#fff7df] p-3">
-              <p className="text-sm font-bold text-[var(--ink)]">{milestone.title}</p>
-              <p className="mt-1 text-xs leading-5 text-[var(--muted)]">{milestone.agentNote}</p>
-            </div>
+            <MilestoneReviewRow
+              key={milestone.id}
+              title={milestone.title}
+              hasEvidence={milestone.evidence.length > 0}
+              isReviewing={reviewingMilestoneId === milestone.id}
+              result={reviews[milestone.id]}
+            />
           ))}
         </div>
       </CardContent>
     </Card>
   );
+}
+
+function MilestoneReviewRow({
+  title,
+  hasEvidence,
+  isReviewing,
+  result
+}: {
+  title: string;
+  hasEvidence: boolean;
+  isReviewing: boolean;
+  result?: MilestoneReviewResult;
+}) {
+  const confidence = result ? Math.round(result.review.confidence * 100) : undefined;
+
+  return (
+    <div className="rounded-2xl bg-[#fff7df] p-3">
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-sm font-bold text-[var(--ink)]">{title}</p>
+        {confidence === undefined ? null : (
+          <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-black ${getTone(result?.review.verdict, false)}`}>
+            {confidence}%
+          </span>
+        )}
+      </div>
+      <p className="mt-1 text-xs leading-5 text-[var(--muted)]">{getRowStatus(hasEvidence, isReviewing, result)}</p>
+      {result ? (
+        <div className="mt-2">
+          <VerificationLink label="Review root" value={result.rootHash} />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function getRowStatus(hasEvidence: boolean, isReviewing: boolean, result: MilestoneReviewResult | undefined): string {
+  if (result) {
+    return `${result.review.verdict.replace("_", " ")} - ${result.review.recommendedAction.replaceAll("_", " ")}`;
+  }
+
+  if (isReviewing) {
+    return "Agent review is running.";
+  }
+
+  return hasEvidence ? "Evidence submitted. Ready for client review request." : "Waiting for freelancer evidence.";
+}
+
+function getTone(verdict: MilestoneReviewResult["review"]["verdict"] | undefined, isReviewing: boolean): string {
+  if (isReviewing) {
+    return "bg-blue-50 text-blue-800";
+  }
+
+  if (verdict === "approve") {
+    return "bg-emerald-50 text-emerald-800";
+  }
+
+  if (verdict === "reject") {
+    return "bg-red-50 text-red-800";
+  }
+
+  return "bg-yellow-100 text-yellow-900";
 }
 

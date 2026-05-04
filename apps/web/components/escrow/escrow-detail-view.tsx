@@ -216,7 +216,7 @@ export function EscrowDetailView({ escrowId }: { escrowId: string }) {
         </div>
 
         <aside className="grid h-fit gap-6">
-          <AgentReviewPanel escrow={escrow} />
+          <AgentReviewPanel escrow={escrow} reviews={reviewResults} reviewingMilestoneId={reviewingMilestoneId} />
           <PayoutTimeline escrow={escrow} />
           <DisputePanel dispute={escrow.dispute} />
         </aside>
