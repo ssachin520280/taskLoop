@@ -31,7 +31,7 @@ export function useCreateEscrow(): UseCreateEscrowResult {
   const { writeContractAsync } = useWriteContract();
   const { switchChainAsync } = useSwitchChain();
   const publicClient = usePublicClient({ chainId: taskloopChainId });
-  const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash: transactionHash });
+  const { isLoading: isConfirming } = useWaitForTransactionReceipt({ chainId: taskloopChainId, hash: transactionHash });
   const { toast } = useToast();
 
   async function submitCreateEscrow(form: CreateEscrowFormInput): Promise<CreateEscrowResult> {

@@ -39,7 +39,7 @@ export function IdentityCard({
 
 function getIdentityHint(ensName: string | undefined, isError: boolean): string {
   if (ensName) {
-    return "Primary ENS found. Judges can verify the human-readable identity before funds move.";
+    return "Primary ENS found.";
   }
 
   if (isError) {

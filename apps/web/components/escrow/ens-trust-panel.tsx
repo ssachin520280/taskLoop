@@ -11,8 +11,7 @@ export function EnsTrustPanel() {
         <div className="grid gap-3 text-sm leading-6 text-[var(--muted)]">
           <p>
             TaskLoop resolves primary ENS names for the client and freelancer when available, then falls back to shortened
-            wallet addresses. That gives judges a quick way to understand who is funding, submitting, approving, and
-            receiving payouts.
+            wallet addresses.
           </p>
           <p>
             The same identity layer reduces mistakes in the highest-risk moments: approving evidence, releasing a

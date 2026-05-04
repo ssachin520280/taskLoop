@@ -3,8 +3,9 @@
 import { milestoneEscrowAbi } from "@taskloop/shared";
 import { useMemo, useState } from "react";
 import { isAddress, type Hex } from "viem";
-import { usePublicClient, useReadContracts, useWriteContract } from "wagmi";
+import { useAccount, usePublicClient, useReadContracts, useSwitchChain, useWriteContract } from "wagmi";
 import { useToast } from "@/components/toast-provider";
+import { taskloopChainId } from "@/lib/chains";
 import type { Escrow, FundingStatus, Milestone, MilestoneStatus } from "@/lib/escrow";
 import { escrowTotal } from "@/lib/escrow";
 
@@ -43,7 +44,9 @@ const milestoneStatusLabels: MilestoneStatus[] = ["pending", "submitted", "appro
 
 export function useEscrowContract(escrowId: string): EscrowContractState {
   const address = isAddress(escrowId) ? escrowId : undefined;
-  const publicClient = usePublicClient();
+  const { chainId } = useAccount();
+  const publicClient = usePublicClient({ chainId: taskloopChainId });
+  const { switchChainAsync } = useSwitchChain();
   const { writeContractAsync } = useWriteContract();
   const { toast } = useToast();
   const [pendingAction, setPendingAction] = useState<string>();
@@ -53,12 +56,12 @@ export function useEscrowContract(escrowId: string): EscrowContractState {
     () =>
       address
         ? ([
-            { address, abi: milestoneEscrowAbi, functionName: "client" },
-            { address, abi: milestoneEscrowAbi, functionName: "freelancer" },
-            { address, abi: milestoneEscrowAbi, functionName: "totalAmount" },
-            { address, abi: milestoneEscrowAbi, functionName: "releasedAmount" },
-            { address, abi: milestoneEscrowAbi, functionName: "status" },
-            { address, abi: milestoneEscrowAbi, functionName: "getMilestones" }
+            { address, abi: milestoneEscrowAbi, chainId: taskloopChainId, functionName: "client" },
+            { address, abi: milestoneEscrowAbi, chainId: taskloopChainId, functionName: "freelancer" },
+            { address, abi: milestoneEscrowAbi, chainId: taskloopChainId, functionName: "totalAmount" },
+            { address, abi: milestoneEscrowAbi, chainId: taskloopChainId, functionName: "releasedAmount" },
+            { address, abi: milestoneEscrowAbi, chainId: taskloopChainId, functionName: "status" },
+            { address, abi: milestoneEscrowAbi, chainId: taskloopChainId, functionName: "getMilestones" }
           ] as const)
         : undefined,
     [address]
@@ -120,6 +123,10 @@ export function useEscrowContract(escrowId: string): EscrowContractState {
     setError(undefined);
 
     try {
+      if (chainId !== taskloopChainId) {
+        await switchChainAsync({ chainId: taskloopChainId });
+      }
+
       const hash = await request(contractAddress);
       toast({ title: `${label} submitted`, description: hash, tone: "info" });
 
@@ -151,6 +158,7 @@ export function useEscrowContract(escrowId: string): EscrowContractState {
           writeContractAsync({
             address: contractAddress,
             abi: milestoneEscrowAbi,
+            chainId: taskloopChainId,
             functionName: "fund",
             value: payableAmountWei
           })
@@ -160,6 +168,7 @@ export function useEscrowContract(escrowId: string): EscrowContractState {
           writeContractAsync({
             address: contractAddress,
             abi: milestoneEscrowAbi,
+            chainId: taskloopChainId,
             functionName: "submitEvidence",
             args: [BigInt(readMilestoneIndex(milestoneId)), evidence]
           })
@@ -169,6 +178,7 @@ export function useEscrowContract(escrowId: string): EscrowContractState {
           writeContractAsync({
             address: contractAddress,
             abi: milestoneEscrowAbi,
+            chainId: taskloopChainId,
             functionName: "approveMilestone",
             args: [BigInt(readMilestoneIndex(milestoneId))]
           })
@@ -178,6 +188,7 @@ export function useEscrowContract(escrowId: string): EscrowContractState {
           writeContractAsync({
             address: contractAddress,
             abi: milestoneEscrowAbi,
+            chainId: taskloopChainId,
             functionName: "approveMilestone",
             args: [BigInt(readMilestoneIndex(milestoneId))]
           })
@@ -187,6 +198,7 @@ export function useEscrowContract(escrowId: string): EscrowContractState {
           writeContractAsync({
             address: contractAddress,
             abi: milestoneEscrowAbi,
+            chainId: taskloopChainId,
             functionName: "attachReviewRoots",
             args: [BigInt(readMilestoneIndex(milestoneId)), reviewRootHash, executionRootHash]
           })
@@ -196,6 +208,7 @@ export function useEscrowContract(escrowId: string): EscrowContractState {
           writeContractAsync({
             address: contractAddress,
             abi: milestoneEscrowAbi,
+            chainId: taskloopChainId,
             functionName: "disputeMilestone",
             args: [BigInt(readMilestoneIndex(milestoneId)), reason]
           })

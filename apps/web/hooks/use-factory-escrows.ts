@@ -4,6 +4,7 @@ import { escrowFactoryAbi, milestoneEscrowAbi } from "@taskloop/shared";
 import { useMemo } from "react";
 import type { Address } from "viem";
 import { useAccount, useReadContract, useReadContracts } from "wagmi";
+import { taskloopChainId } from "@/lib/chains";
 import type { Escrow, EscrowStatus, FundingStatus, Milestone, MilestoneStatus, UserRole } from "@/lib/escrow";
 import { contractAddresses } from "@/lib/contracts/config";
 
@@ -65,6 +66,7 @@ export function useFactoryEscrows(): FactoryEscrowDashboardState {
   const countRead = useReadContract({
     address: factoryAddress,
     abi: escrowFactoryAbi,
+    chainId: taskloopChainId,
     functionName: "escrowCount",
     query: {
       enabled: Boolean(factoryAddress)
@@ -74,6 +76,7 @@ export function useFactoryEscrows(): FactoryEscrowDashboardState {
   const accountEscrowsRead = useReadContract({
     address: factoryAddress,
     abi: escrowFactoryAbi,
+    chainId: taskloopChainId,
     functionName: "getEscrowsByAccount",
     args: accountAddress ? [accountAddress] : undefined,
     query: {
@@ -96,6 +99,7 @@ export function useFactoryEscrows(): FactoryEscrowDashboardState {
               ({
                 address: factoryAddress,
                 abi: escrowFactoryAbi,
+                chainId: taskloopChainId,
                 functionName: "getEscrow",
                 args: [escrowId]
               }) as const
@@ -126,16 +130,19 @@ export function useFactoryEscrows(): FactoryEscrowDashboardState {
         {
           address: record.escrow,
           abi: milestoneEscrowAbi,
+          chainId: taskloopChainId,
           functionName: "releasedAmount"
         } as const,
         {
           address: record.escrow,
           abi: milestoneEscrowAbi,
+          chainId: taskloopChainId,
           functionName: "status"
         } as const,
         {
           address: record.escrow,
           abi: milestoneEscrowAbi,
+          chainId: taskloopChainId,
           functionName: "getMilestones"
         } as const
       ]),

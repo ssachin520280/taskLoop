@@ -250,7 +250,7 @@ export function CreateEscrowForm(): ReactNode {
             <span>
               {step === "review"
                 ? "Submit with wagmi through the configured factory contract."
-                : "Validation runs before the review step so judges see a safe funding preview."}
+                : "Validation runs before the review step."}
             </span>
             <div className="flex gap-2">
               {step === "review" ? (
