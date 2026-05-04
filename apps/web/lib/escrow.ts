@@ -1,4 +1,4 @@
-import { formatEther } from "viem";
+import { formatTokenAmount } from "@taskloop/shared";
 
 export type UserRole = "client" | "freelancer";
 
@@ -77,7 +77,7 @@ export type Escrow = {
 };
 
 export function formatEth(amountWei: bigint): string {
-  return `${Number(formatEther(amountWei)).toFixed(2)} 0G`;
+  return formatTokenAmount(amountWei);
 }
 
 export function escrowTotal(escrow: Escrow): bigint {

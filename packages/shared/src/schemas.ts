@@ -32,7 +32,7 @@ export const tokenAmountSchema = z
   .string()
   .trim()
   .min(1, "Amount is required")
-  .regex(/^\d+(\.\d{1,18})?$/, "Use a valid ETH amount")
+  .regex(/^\d+(\.\d{1,18})?$/, "Use a valid 0G amount")
   .refine((value) => Number(value) > 0, "Amount must be greater than zero");
 
 export const createEscrowMilestoneSchema = z.object({

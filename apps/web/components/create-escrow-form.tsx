@@ -238,7 +238,7 @@ export function CreateEscrowForm(): ReactNode {
                       <span>
                         {index + 1}. {milestone.title}
                       </span>
-                      <strong>{milestone.amountEth} 0G</strong>
+                      <strong>{formatTokenAmount(parseEther(milestone.amountEth || "0"))}</strong>
                     </div>
                   ))}
                 </div>
