@@ -3,8 +3,9 @@
 import { escrowFactoryAbi, type CreateEscrowFormInput } from "@taskloop/shared";
 import { useState } from "react";
 import { decodeEventLog, type Hex } from "viem";
-import { usePublicClient, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
+import { useAccount, usePublicClient, useSwitchChain, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
 import { useToast } from "@/components/toast-provider";
+import { taskloopChainId } from "@/lib/chains";
 import { contractAddresses } from "@/lib/contracts/config";
 import {
   toCreateEscrowContractDraft,
@@ -26,8 +27,10 @@ export type UseCreateEscrowResult = CreateEscrowState & {
 export function useCreateEscrow(): UseCreateEscrowResult {
   const [state, setState] = useState<CreateEscrowState>({ isSubmitting: false });
   const [transactionHash, setTransactionHash] = useState<Hex>();
+  const { chainId } = useAccount();
   const { writeContractAsync } = useWriteContract();
-  const publicClient = usePublicClient();
+  const { switchChainAsync } = useSwitchChain();
+  const publicClient = usePublicClient({ chainId: taskloopChainId });
   const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash: transactionHash });
   const { toast } = useToast();
 
@@ -73,9 +76,14 @@ export function useCreateEscrow(): UseCreateEscrowResult {
       throw new Error("Missing NEXT_PUBLIC_ESCROW_FACTORY_ADDRESS");
     }
 
+    if (chainId !== taskloopChainId) {
+      await switchChainAsync({ chainId: taskloopChainId });
+    }
+
     const hash = await writeContractAsync({
       address: contractAddresses.escrowFactory,
       abi: escrowFactoryAbi,
+      chainId: taskloopChainId,
       functionName: "createEscrow",
       args: [freelancer, milestones]
     });

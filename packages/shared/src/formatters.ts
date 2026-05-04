@@ -17,7 +17,7 @@ export function formatAddress(address?: Address | string, visibleChars = 4): str
   return `${address.slice(0, visibleChars + 2)}...${address.slice(-visibleChars)}`;
 }
 
-export function formatTokenAmount(amountWei: bigint, symbol = "ETH"): string {
+export function formatTokenAmount(amountWei: bigint, symbol = "0G"): string {
   const sign = amountWei < 0n ? "-" : "";
   const absoluteAmountWei = amountWei < 0n ? -amountWei : amountWei;
   const roundedAmount = (absoluteAmountWei + DISPLAY_SCALE / 2n) / DISPLAY_SCALE;
